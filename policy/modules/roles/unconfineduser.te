@@ -337,6 +337,7 @@ optional_policy(`
 
 	tunable_policy(`unconfined_mozilla_plugin_transition', `
 			mozilla_domtrans_plugin(unconfined_t)
+			mozilla_nnp_domtrans_plugin(unconfined_t)
 	')
 ')
 
@@ -384,6 +385,7 @@ optional_policy(`
 ')
 
 optional_policy(`
+	virt_prog_run_bpf(unconfined_t)
 	virt_transition_svirt(unconfined_t, unconfined_r)
 	virt_transition_svirt_sandbox(unconfined_t, unconfined_r)
 	virt_sandbox_entrypoint(unconfined_t)

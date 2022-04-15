@@ -386,13 +386,24 @@ tunable_policy(`deny_bluetooth',`',`
 
 dev_watch_generic_dirs(login_userdomain)
 
+files_map_var_lib_files(login_userdomain)
+files_read_var_lib_symlinks(login_userdomain)
 files_watch_etc_dirs(login_userdomain)
+files_watch_etc_files(login_userdomain)
+files_watch_system_conf_dirs(login_userdomain)
 files_watch_usr_dirs(login_userdomain)
+files_watch_usr_files(login_userdomain)
 files_watch_var_lib_dirs(login_userdomain)
+files_watch_var_run_dirs(login_userdomain)
+files_watch_generic_tmp_dirs(login_userdomain)
 
 fs_create_cgroup_files(login_userdomain)
 fs_watch_cgroup_files(login_userdomain)
 
+libs_watch_lib_dirs(login_userdomain)
+
+miscfiles_watch_fonts_dirs(login_userdomain)
+miscfiles_watch_localization_dirs(login_userdomain)
 miscfiles_watch_localization_symlinks(login_userdomain)
 
 mount_watch_pid_dirs(login_userdomain)
@@ -401,6 +412,16 @@ mount_watch_reads_pid_files(login_userdomain)
 
 optional_policy(`
 	init_mmap_read_var_lib_files(login_userdomain)
+	init_read_pid_files(login_userdomain)
+')
+
+optional_policy(`
+	accountsd_watch_lib(login_userdomain)
+')
+
+optional_policy(`
+	dbus_create_session_tmp_sock_files(login_userdomain)
+	dbus_write_session_tmp_sock_files(login_userdomain)
 ')
 
 optional_policy(`
@@ -410,7 +431,18 @@ optional_policy(`
 ')
 
 optional_policy(`
+	logging_mmap_journal(login_userdomain)
+	logging_read_syslog_pid(login_userdomain)
+')
+
+optional_policy(`
+	pkcs_tmpfs_named_filetrans(login_userdomain)
+')
+
+optional_policy(`
+	systemd_login_watch_pid_dirs(login_userdomain)
 	systemd_login_watch_session_dirs(login_userdomain)
+	systemd_machined_watch_pid_dirs(login_userdomain)
 ')
 
 ############################################################
@@ -552,6 +584,14 @@ tunable_policy(`selinuxuser_execstack',`
 
 optional_policy(`
 	fs_list_cgroup_dirs(confined_admindomain)
+')
+
+optional_policy(`
+	kerberos_read_keytab(confined_admindomain)
+')
+
+optional_policy(`
+	rpc_rw_gssd_keys(confined_admindomain)
 ')
 	
 optional_policy(`

@@ -718,6 +718,8 @@ allow smbcontrol_t self:capability2 block_suspend;
 allow smbcontrol_t self:process { signal signull };
 # internal communication is often done using fifo and unix sockets.
 allow smbcontrol_t self:fifo_file rw_file_perms;
+allow smbcontrol_t self:netlink_route_socket r_netlink_socket_perms;
+allow smbcontrol_t self:udp_socket create_socket_perms;
 allow smbcontrol_t self:unix_stream_socket create_stream_socket_perms;
 allow smbcontrol_t self:unix_dgram_socket create_socket_perms;
 
@@ -740,6 +742,8 @@ allow smbcontrol_t winbind_t:unix_dgram_socket sendto;
 samba_read_config(smbcontrol_t)
 samba_search_var(smbcontrol_t)
 samba_read_winbind_pid(smbcontrol_t)
+
+kernel_read_network_state(smbcontrol_t)
 
 domain_use_interactive_fds(smbcontrol_t)
 

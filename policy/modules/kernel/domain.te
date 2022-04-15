@@ -121,7 +121,7 @@ neverallow ~{ domain unlabeled_t } *:process *;
 # Rules applied to all domains
 #
 
-allow domain self:anon_inode userfaultfd_anon_inode_perms;
+allow domain self:anon_inode common_anon_inode_perms;
 # read /proc/(pid|self) entries
 allow domain self:dir { list_dir_perms watch_dir_perms };
 allow domain self:lnk_file { read_lnk_file_perms lock ioctl };
@@ -253,6 +253,10 @@ optional_policy(`
 # unconfined access also allows constraints, but this
 # is handled in the interface as typeattribute cannot
 # be used on an attribute.
+
+# allow special io_uring features
+allow unconfined_domain_type domain:io_uring override_creds;
+allow unconfined_domain_type self:io_uring sqpoll;
 
 # Use bpf tools
 allow unconfined_domain_type domain:bpf { map_create map_read map_write prog_load prog_run };

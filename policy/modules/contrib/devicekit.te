@@ -99,6 +99,7 @@ kernel_read_software_raid_state(devicekit_disk_t)
 kernel_read_system_state(devicekit_disk_t)
 kernel_read_vm_sysctls(devicekit_disk_t)
 kernel_request_load_module(devicekit_disk_t)
+kernel_get_sysvipc_info(devicekit_disk_t)
 kernel_dontaudit_setsched(devicekit_disk_t)
 
 corecmd_exec_bin(devicekit_disk_t)
@@ -109,6 +110,7 @@ dev_getattr_all_chr_files(devicekit_disk_t)
 dev_getattr_mtrr_dev(devicekit_disk_t)
 dev_rw_generic_blk_files(devicekit_disk_t)
 dev_rw_loop_control(devicekit_disk_t)
+dev_rw_lvm_control(devicekit_disk_t)
 dev_getattr_usbfs_dirs(devicekit_disk_t)
 dev_manage_generic_files(devicekit_disk_t)
 dev_read_rand(devicekit_disk_t)
@@ -131,6 +133,7 @@ files_manage_mnt_dirs(devicekit_disk_t)
 files_watch_etc_dirs(devicekit_disk_t) # udisksd watches /etc
 files_manage_etc_files(devicekit_disk_t)
 files_read_etc_runtime_files(devicekit_disk_t)
+files_mounton_mnt(devicekit_disk_t)
 
 fs_getattr_all_fs(devicekit_disk_t)
 fs_manage_fusefs_dirs(devicekit_disk_t)
@@ -181,9 +184,7 @@ optional_policy(`
 
 optional_policy(`
 	mount_domtrans(devicekit_disk_t)
-	mount_read_pid_files(devicekit_disk_t)
-	mount_watch_pid_files(devicekit_disk_t)
-	mount_watch_reads_pid_files(devicekit_disk_t)
+	mount_manage_pid_files(devicekit_disk_t)
 ')
 
 optional_policy(`
@@ -198,6 +199,7 @@ optional_policy(`
 
 optional_policy(`
 	systemd_read_logind_sessions_files(devicekit_disk_t)
+	systemd_login_read_pid_files(devicekit_disk_t)
 	systemd_write_inhibit_pipes(devicekit_disk_t)
 ')
 

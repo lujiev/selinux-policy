@@ -41,6 +41,7 @@ files_pid_filetrans(gssproxy_t, gssproxy_var_run_t, { dir file lnk_file sock_fil
 
 kernel_rw_rpc_sysctls(gssproxy_t)
 kernel_read_network_state(gssproxy_t)
+kernel_read_system_state(gssproxy_t)
 
 domain_use_interactive_fds(gssproxy_t)
 domain_read_all_domains_state(gssproxy_t)
@@ -51,7 +52,10 @@ fs_getattr_all_fs(gssproxy_t)
 
 auth_use_nsswitch(gssproxy_t)
 
+dev_read_rand(gssproxy_t)
 dev_read_urand(gssproxy_t)
+dev_read_sysfs(gssproxy_t)
+dev_rw_crypto(gssproxy_t)
 
 logging_send_syslog_msg(gssproxy_t)
 
@@ -64,6 +68,10 @@ userdom_manage_user_tmp_files(gssproxy_t)
 optional_policy(`
     apache_domtrans(gssproxy_t)
     apache_systemctl(gssproxy_t)
+')
+
+optional_policy(`
+	ica_rw_map_tmpfs_files(gssproxy_t)
 ')
 
 optional_policy(`

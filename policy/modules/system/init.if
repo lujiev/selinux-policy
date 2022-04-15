@@ -2789,6 +2789,25 @@ interface(`init_rw_stream_sockets',`
 	allow $1 init_t:unix_stream_socket rw_stream_socket_perms;
 ')
 
+########################################
+## <summary>
+##	Allow the specified domain to append to
+##	init unix domain stream sockets.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`init_append_stream_sockets',`
+	gen_require(`
+		type init_t;
+	')
+
+	allow $1 init_t:unix_stream_socket append;
+')
+
 #######################################
 ## <summary>
 ##  Allow the specified domain to write to
@@ -3288,7 +3307,7 @@ interface(`init_filetrans_named_content',`
 		type initrc_var_run_t;
 		type machineid_t;
 		type initctl_t;
-        type systemd_unit_file_t;
+        	type systemd_unit_file_t;
 	')
 
 	files_pid_filetrans($1, initrc_var_run_t, file, "utmp")
@@ -3296,6 +3315,8 @@ interface(`init_filetrans_named_content',`
 	files_etc_filetrans($1, machineid_t, file, "machine-id" )
 	files_pid_filetrans($1, initctl_t, fifo_file, "fifo" )
 	init_pid_filetrans($1, systemd_unit_file_t, dir, "generator")
+	init_pid_filetrans($1, systemd_unit_file_t, dir, "generator.early")
+	init_pid_filetrans($1, systemd_unit_file_t, dir, "generator.late")
 	init_pid_filetrans($1, systemd_unit_file_t, dir, "system")
 ')
 

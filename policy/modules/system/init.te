@@ -377,6 +377,8 @@ term_watch_console_dev(init_t)
 term_watch_reads_console_dev(init_t)
 term_watch_unallocated_ttys(init_t)
 term_watch_reads_unallocated_ttys(init_t)
+term_watch_user_ttys(init_t)
+term_watch_reads_user_ttys(init_t)
 
 # Run init scripts.
 init_domtrans_script(init_t)
@@ -516,6 +518,7 @@ optional_policy(`
 
 optional_policy(`
 	rpm_read_db(init_t)
+	rpm_script_ioctl_stream_sockets(init_t)
 ')
 
 optional_policy(`
@@ -588,6 +591,7 @@ tunable_policy(`deny_bluetooth',`',`
 ')
 
 kernel_list_unlabeled(init_t)
+kernel_read_unlabeled_lnk_files(init_t)
 kernel_read_network_state(init_t)
 kernel_rw_all_sysctls(init_t)
 kernel_rw_security_state(init_t)
@@ -646,6 +650,7 @@ files_read_kernel_modules(init_t)
 files_map_kernel_modules(init_t)
 files_dontaudit_mounton_isid(init_t)
 files_delete_tmp_files(init_t)
+files_delete_tmp_pipes(init_t)
 files_delete_tmp_sockets(init_t)
 fs_getattr_all_fs(init_t)
 fs_manage_cgroup_dirs(init_t)
@@ -836,6 +841,10 @@ optional_policy(`
 ')
 
 optional_policy(`
+	stratisd_data_read_lnk_files(init_t)
+')
+
+optional_policy(`
 	systemd_filetrans_named_content(init_t)
     systemd_write_inhibit_pipes(init_t)
 ')
@@ -868,6 +877,11 @@ optional_policy(`
     unconfined_server_create_tcp_sockets(init_t)
     unconfined_server_create_udp_sockets(init_t)
     unconfined_server_create_unix_sockets(init_t)
+')
+
+optional_policy(`
+	userdom_exec_user_bin_files(init_t)
+	userdom_rw_stream(init_t)
 ')
 
 ########################################

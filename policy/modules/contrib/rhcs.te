@@ -488,6 +488,8 @@ optional_policy(`
 		corenet_tcp_connect_ssh_port(fenced_t)
 		corenet_tcp_sendrecv_ssh_port(fenced_t)
 
+		kerberos_read_keytab(fenced_t)
+
 		ssh_exec(fenced_t)
 		ssh_read_user_home_files(fenced_t)
 	')
@@ -664,6 +666,9 @@ corenet_tcp_connect_rtp_media_port(haproxy_t)
 dev_list_sysfs(haproxy_t)
 dev_read_rand(haproxy_t)
 dev_read_urand(haproxy_t)
+
+fs_getattr_cgroup(haproxy_t)
+fs_getattr_xattr_fs(haproxy_t)
 
 sysnet_dns_name_resolve(haproxy_t)
 

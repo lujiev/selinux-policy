@@ -29,6 +29,7 @@ typealias fs_t alias inotifyfs_t;
 # Requires that a security xattr handler exist for the filesystem.
 fs_use_xattr btrfs gen_context(system_u:object_r:fs_t,s0);
 fs_use_xattr encfs gen_context(system_u:object_r:fs_t,s0);
+fs_use_xattr erofs gen_context(system_u:object_r:fs_t,s0);
 fs_use_xattr ext2 gen_context(system_u:object_r:fs_t,s0);
 fs_use_xattr ext3 gen_context(system_u:object_r:fs_t,s0);
 fs_use_xattr ext4 gen_context(system_u:object_r:fs_t,s0);
@@ -177,7 +178,7 @@ genfscon pstore / gen_context(system_u:object_r:pstore_t,s0)
 type ramfs_t;
 fs_type(ramfs_t)
 files_mountpoint(ramfs_t)
-genfscon ramfs / gen_context(system_u:object_r:ramfs_t,s0)
+fs_use_trans ramfs gen_context(system_u:object_r:ramfs_t,s0);
 
 type romfs_t;
 fs_type(romfs_t)
@@ -275,6 +276,7 @@ genfscon hfsplus / gen_context(system_u:object_r:dosfs_t,s0)
 genfscon msdos / gen_context(system_u:object_r:dosfs_t,s0)
 genfscon ntfs-3g / gen_context(system_u:object_r:dosfs_t,s0)
 genfscon ntfs / gen_context(system_u:object_r:dosfs_t,s0)
+genfscon ntfs3 / gen_context(system_u:object_r:dosfs_t,s0)
 genfscon vfat / gen_context(system_u:object_r:dosfs_t,s0)
 genfscon exfat / gen_context(system_u:object_r:dosfs_t,s0)
 

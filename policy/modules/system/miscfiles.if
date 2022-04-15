@@ -165,6 +165,25 @@ interface(`miscfiles_manage_generic_cert_dirs',`
 
 ########################################
 ## <summary>
+##	Watch generic SSL certificate dirs.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+## <rolecap/>
+#
+interface(`miscfiles_watch_generic_cert_dirs',`
+	gen_require(`
+		type cert_t;
+	')
+
+	allow $1 cert_t:dir watch_dir_perms;
+')
+
+########################################
+## <summary>
 ##	Allow process to relabel cert_t
 ## </summary>
 ## <param name="domain">
@@ -284,6 +303,25 @@ interface(`miscfiles_dontaudit_access_check_cert',`
 interface(`miscfiles_manage_cert_files',`
 	miscfiles_manage_generic_cert_files($1)
 	refpolicywarn(`$0() has been deprecated, please use miscfiles_manage_generic_cert_files() instead.')
+')
+
+########################################
+## <summary>
+##	Search generic SSL certificates dirs
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`miscfiles_search_generic_cert_dirs',`
+	gen_require(`
+		type cert_t;
+	')
+
+	files_search_etc($1)
+	allow $1 cert_t:dir search_dir_perms;
 ')
 
 ########################################
@@ -553,6 +591,30 @@ interface(`miscfiles_read_localization',`
 	read_files_pattern($1, locale_t, locale_t)
 	read_lnk_files_pattern($1, locale_t, locale_t)
 	allow $1 locale_t:file map;
+')
+
+########################################
+## <summary>
+##	Allow process to watch localization directories.
+## </summary>
+## <desc>
+##	<p>
+##	Allow the specified domain to watch localization directories
+##	(e.g. /usr/share/zoneinfo/) for changes.
+##	</p>
+## </desc>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`miscfiles_watch_localization_dirs',`
+	gen_require(`
+		type locale_t;
+	')
+
+	watch_dirs_pattern($1, locale_t, locale_t)
 ')
 
 ########################################

@@ -57,9 +57,16 @@ optional_policy(`
     init_dbus_chat(timedatex_t)
 
     policykit_dbus_chat(timedatex_t)
+
+	optional_policy(`
+		xserver_dbus_chat_xdm(timedatex_t)
+	')
+')
+
+optional_policy(`
+    sosreport_dbus_chat(timedatex_t)
 ')
 
 optional_policy(`
     userdom_dbus_send_all_users(timedatex_t)
 ')
-

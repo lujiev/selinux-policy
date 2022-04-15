@@ -606,6 +606,27 @@ interface(`dbus_watch_pid_dirs',`
 
 ########################################
 ## <summary>
+##	Watch system dbusd pid directory and all its parents
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`dbus_watch_pid_dir_path',`
+	gen_require(`
+		type system_dbusd_var_run_t;
+	')
+
+	files_watch_root_dirs($1)
+	files_watch_var_run_dirs($1)
+	files_search_pids($1)
+	allow $1 system_dbusd_var_run_t:dir watch_dir_perms;
+')
+
+########################################
+## <summary>
 ##	Read and write system dbus tmp socket files.
 ## </summary>
 ## <param name="domain">
@@ -861,6 +882,60 @@ interface(`dbus_manage_session_tmp_dirs',`
         ')
 
 	manage_dirs_pattern($1, session_dbusd_tmp_t, session_dbusd_tmp_t)
+')
+
+########################################
+## <summary>
+##      Write to session_dbusd tmp socket files.
+## </summary>
+## <param name="domain">
+##      <summary>
+##      Domain allowed access.
+##      </summary>
+## </param>
+#
+interface(`dbus_write_session_tmp_sock_files',`
+        gen_require(`
+                type session_dbusd_tmp_t;
+        ')
+
+	write_sock_files_pattern($1, session_dbusd_tmp_t, session_dbusd_tmp_t)
+')
+
+########################################
+## <summary>
+##      Delete session_dbusd tmp socket files.
+## </summary>
+## <param name="domain">
+##      <summary>
+##      Domain allowed access.
+##      </summary>
+## </param>
+#
+interface(`dbus_delete_session_tmp_sock_files',`
+        gen_require(`
+                type session_dbusd_tmp_t;
+        ')
+
+	delete_sock_files_pattern($1, session_dbusd_tmp_t, session_dbusd_tmp_t)
+')
+
+########################################
+## <summary>
+##      Create session_dbusd tmp socket files.
+## </summary>
+## <param name="domain">
+##      <summary>
+##      Domain allowed access.
+##      </summary>
+## </param>
+#
+interface(`dbus_create_session_tmp_sock_files',`
+        gen_require(`
+                type session_dbusd_tmp_t;
+        ')
+
+	create_sock_files_pattern($1, session_dbusd_tmp_t, session_dbusd_tmp_t)
 ')
 
 ########################################

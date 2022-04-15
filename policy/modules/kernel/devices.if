@@ -2760,6 +2760,24 @@ interface(`dev_write_kmsg',`
 
 ########################################
 ## <summary>
+##	Mounton the kernel messages device
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`dev_mounton_kmsg',`
+	gen_require(`
+		type kmsg_device_t;
+	')
+
+	allow $1 kmsg_device_t:chr_file mounton;
+')
+
+########################################
+## <summary>
 ##	Get the attributes of the ksm devices.
 ## </summary>
 ## <param name="domain">
@@ -5964,6 +5982,24 @@ interface(`dev_rw_inherited_vhost',`
 
 ########################################
 ## <summary>
+##	Allow map the vhost devices
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`dev_map_vhost',`
+	gen_require(`
+		type device_t, vhost_device_t;
+	')
+
+	allow $1 vhost_device_t:chr_file map;
+')
+
+########################################
+## <summary>
 ##	Read and write VMWare devices.
 ## </summary>
 ## <param name="domain">
@@ -6614,6 +6650,7 @@ gen_require(`
 	type power_device_t;
 	type opal_device_t;
 	type wireless_device_t;
+	type hwtracing_device_t;
 	type tpm_device_t;
 	type userio_device_t;
 	type urandom_device_t;
@@ -7097,6 +7134,8 @@ gen_require(`
 	filetrans_pattern($1, device_t, apm_bios_t, chr_file, "snapshot")
 	filetrans_pattern($1, device_t, sound_device_t, chr_file, "sndstat")
 	filetrans_pattern($1, device_t, v4l_device_t, chr_file, "sonypi")
+	filetrans_pattern($1, device_t, hwtracing_device_t, chr_file, "tmc_etr0")
+	filetrans_pattern($1, device_t, hwtracing_device_t, chr_file, "tmc_etr1")
 	filetrans_pattern($1, device_t, tpm_device_t, chr_file, "tpm0")
 	filetrans_pattern($1, device_t, tpm_device_t, chr_file, "tpm1")
 	filetrans_pattern($1, device_t, tpm_device_t, chr_file, "tpm2")

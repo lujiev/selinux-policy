@@ -161,6 +161,8 @@ systemd_domain_template(systemd_sysctl)
 #domain for gpt-auto-generator
 systemd_domain_template(systemd_gpt_generator)
 
+systemd_domain_template(systemd_network_generator)
+
 type systemd_gpt_generator_unit_file_t;
 systemd_unit_file(systemd_gpt_generator_unit_file_t)
 
@@ -273,6 +275,7 @@ dev_setattr_sound_dev(systemd_logind_t)
 dev_setattr_video_dev(systemd_logind_t)
 dev_write_kmsg(systemd_logind_t)
 
+domain_obj_id_change_exemption(systemd_logind_t)
 domain_read_all_domains_state(systemd_logind_t)
 domain_signal_all_domains(systemd_logind_t)
 domain_signull_all_domains(systemd_logind_t)
@@ -363,6 +366,7 @@ optional_policy(`
 optional_policy(`
 	dbus_connect_system_bus(systemd_logind_t)
 	dbus_system_bus_client(systemd_logind_t)
+	dbus_delete_session_tmp_sock_files(systemd_logind_t)
     dbus_manage_session_tmp_dirs(systemd_logind_t)
 ')
 
@@ -393,7 +397,16 @@ optional_policy(`
 ')
 
 optional_policy(`
+	unconfined_destroy_msgq(systemd_logind_t)
+	unconfined_destroy_shm(systemd_logind_t)
+')
+
+optional_policy(`
 	rpm_dbus_chat(systemd_logind_t)
+')
+
+optional_policy(`
+	sosreport_dbus_chat(systemd_logind_t)
 ')
 
 optional_policy(`
@@ -451,6 +464,7 @@ getty_start_services(systemd_machined_t)
 optional_policy(`
 	dbus_connect_system_bus(systemd_machined_t)
 	dbus_system_bus_client(systemd_machined_t)
+	dbus_watch_pid_dir_path(systemd_machined_t)
 ')
 
 optional_policy(`
@@ -482,6 +496,7 @@ allow systemd_networkd_t self:process { getcap setcap };
 
 allow systemd_networkd_t self:netlink_kobject_uevent_socket create_socket_perms;
 allow systemd_networkd_t self:netlink_generic_socket create_socket_perms;
+allow systemd_networkd_t self:netlink_netfilter_socket create_socket_perms;
 allow systemd_networkd_t self:netlink_route_socket { create_socket_perms nlmsg_read nlmsg_write };
 allow systemd_networkd_t self:unix_dgram_socket create_socket_perms;
 allow systemd_networkd_t self:packet_socket create_socket_perms;
@@ -529,9 +544,14 @@ init_named_pid_filetrans(systemd_logind_t, systemd_networkd_var_run_t, dir, "net
 optional_policy(`
     dbus_system_bus_client(systemd_networkd_t)
     dbus_connect_system_bus(systemd_networkd_t)
+	dbus_watch_pid_dir_path(systemd_networkd_t)
     dbus_read_pid_files(systemd_networkd_t)
     dbus_read_pid_sock_files(systemd_networkd_t)
     systemd_dbus_chat_logind(systemd_networkd_t)
+')
+
+optional_policy(`
+    sosreport_dbus_chat(systemd_networkd_t)
 ')
 
 optional_policy(`
@@ -855,6 +875,7 @@ userdom_dbus_send_all_users(systemd_hostnamed_t)
 optional_policy(`
         dbus_system_bus_client(systemd_hostnamed_t)
         dbus_connect_system_bus(systemd_hostnamed_t)
+	dbus_watch_pid_dir_path(systemd_hostnamed_t)
 ')
 
 optional_policy(`
@@ -971,7 +992,7 @@ optional_policy(`
         dbus_system_bus_client(systemd_timedated_t)
         dbus_connect_system_bus(systemd_timedated_t)
         dbus_read_pid_sock_files(systemd_timedated_t)
-	dbus_watch_pid_dirs(systemd_timedated_t)
+	dbus_watch_pid_dir_path(systemd_timedated_t)
 	dbus_watch_pid_sock_files(systemd_timedated_t)
 ')
 
@@ -1009,6 +1030,7 @@ allow systemd_sysctl_t self:unix_dgram_socket create_socket_perms;
 kernel_dgram_send(systemd_sysctl_t)
 kernel_request_load_module(systemd_sysctl_t)
 kernel_rw_all_sysctls(systemd_sysctl_t)
+kernel_read_security_state(systemd_sysctl_t)
 kernel_write_security_state(systemd_sysctl_t)
 
 files_read_system_conf_files(systemd_sysctl_t)
@@ -1033,7 +1055,7 @@ systemd_read_efivarfs(systemd_sysctl_t)
 # setgid setuid - to set own credentials to match the dumped process credentials
 # setpcap - to drop capabilities
 allow systemd_coredump_t self:capability { dac_read_search net_admin setgid setpcap setuid sys_ptrace };
-allow systemd_coredump_t self:cap_userns sys_ptrace;
+allow systemd_coredump_t self:cap_userns { dac_read_search dac_override sys_admin sys_ptrace };
 
 # To set its capability set
 allow systemd_coredump_t self:process setcap;
@@ -1048,6 +1070,8 @@ manage_files_pattern(systemd_coredump_t, systemd_coredump_var_lib_t, systemd_cor
 mmap_files_pattern(systemd_coredump_t, systemd_coredump_var_lib_t, systemd_coredump_var_lib_t)
 init_var_lib_filetrans(systemd_coredump_t, systemd_coredump_var_lib_t, dir, "coredump")
 
+kernel_rw_usermodehelper_state(systemd_coredump_t)
+
 dev_write_kmsg(systemd_coredump_t)
 
 # To read info about the crashed process from /proc
@@ -1057,6 +1081,8 @@ domain_read_all_domains_state(systemd_coredump_t)
 # (can be basically any file type)
 files_read_non_security_files(systemd_coredump_t)
 files_map_non_security_files(systemd_coredump_t)
+
+files_mounton_rootfs(systemd_coredump_t)
 
 fs_getattr_nsfs_files(systemd_coredump_t)
 
@@ -1106,6 +1132,16 @@ optional_policy(`
 
 #######################################
 #
+# systemd_network_generator domain
+#
+
+init_named_pid_filetrans(systemd_network_generator_t, net_conf_t, dir, "network")
+
+sysnet_manage_config(systemd_network_generator_t)
+sysnet_manage_config_dirs(systemd_network_generator_t)
+
+#######################################
+#
 # systemd_resolved domain
 #
 
@@ -1143,6 +1179,8 @@ dev_read_sysfs(systemd_resolved_t)
 files_watch_root_dirs(systemd_resolved_t)
 files_watch_var_run_dirs(systemd_resolved_t)
 
+init_watch_pid_dir(systemd_resolved_t)
+
 sysnet_manage_config(systemd_resolved_t)
 sysnet_filetrans_systemd_resolved(systemd_resolved_t)
 
@@ -1155,8 +1193,8 @@ optional_policy(`
 	dbus_connect_system_bus(systemd_resolved_t)
     dbus_read_pid_files(systemd_resolved_t)
     dbus_read_pid_sock_files(systemd_resolved_t)
+	dbus_watch_pid_dir_path(systemd_resolved_t)
 	dbus_watch_pid_sock_files(systemd_resolved_t)
-	dbus_watch_pid_dirs(systemd_resolved_t)
     systemd_dbus_chat_logind(systemd_resolved_t)
 ')
 

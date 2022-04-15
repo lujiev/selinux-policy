@@ -632,6 +632,8 @@ domain_dontaudit_getattr_all_entry_files(xdm_t)
 files_read_etc_files(xdm_t)
 files_read_var_files(xdm_t)
 files_read_etc_runtime_files(xdm_t)
+files_read_var_lib_symlinks(xdm_t)
+files_map_var_lib_files(xdm_t)
 files_exec_etc_files(xdm_t)
 files_list_mnt(xdm_t)
 files_watch_etc_dirs(xdm_t)
@@ -639,6 +641,7 @@ files_watch_etc_files(xdm_t)
 files_watch_lib_dirs(xdm_t)
 files_watch_usr_dirs(xdm_t)
 files_watch_usr_files(xdm_t)
+files_watch_var_lib_dirs(xdm_t)
 files_watch_var_run_dirs(xdm_t)
 files_mounton_non_security(xdm_t)
 # Read /usr/share/terminfo/l/linux and /usr/share/icons/default/index.theme...
@@ -750,6 +753,7 @@ userdom_manage_user_tmp_dirs(xdm_t)
 userdom_manage_user_tmp_files(xdm_t)
 userdom_manage_user_tmp_sockets(xdm_t)
 userdom_manage_tmp_role(system_r, xdm_t)
+userdom_nnp_transition_login_userdomain(xdm_t)
 
 #userdom_home_manager(xdm_t)
 tunable_policy(`xdm_write_home',`
@@ -794,6 +798,7 @@ optional_policy(`
     dbus_stream_connect_session_bus(xdm_t)
     dbus_systemctl(xdm_t)
     dbus_watch_config(xdm_t)
+    dbus_write_session_tmp_sock_files(xdm_t)
 ')
 
 optional_policy(`

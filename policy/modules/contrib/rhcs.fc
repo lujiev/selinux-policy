@@ -1,3 +1,4 @@
+/usr/sbin/corosync-cfgtool	--	gen_context(system_u:object_r:cluster_exec_t,s0)
 /usr/sbin/corosync-qdevice	--	gen_context(system_u:object_r:cluster_exec_t,s0)
 /usr/sbin/dlm_controld			--	gen_context(system_u:object_r:dlm_controld_exec_t,s0)
 /usr/sbin/fenced			    --	gen_context(system_u:object_r:fenced_exec_t,s0)
@@ -109,6 +110,7 @@
 /var/log/cluster/cpglockd\.log.*        --      gen_context(system_u:object_r:cluster_var_log_t,s0)
 /var/log/cluster/corosync\.log.*    --  gen_context(system_u:object_r:cluster_var_log_t,s0)
 /var/log/cluster/rgmanager\.log.*       --  gen_context(system_u:object_r:cluster_var_log_t,s0)
+/var/log/ctdb(/.*)?		gen_context(system_u:object_r:cluster_var_log_t,s0)
 /var/log/pacemaker\.log.*           --  gen_context(system_u:object_r:cluster_var_log_t,s0)
 /var/log/pacemaker(/.*)?     gen_context(system_u:object_r:cluster_var_log_t,s0)
 /var/log/pcsd(/.*)?     gen_context(system_u:object_r:cluster_var_log_t,s0)

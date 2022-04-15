@@ -33,7 +33,11 @@ auth_manage_shadow(sysadm_t)
 corecmd_exec_shell(sysadm_t)
 
 dev_filetrans_all_named_dev(sysadm_t)
+dev_rw_autofs(sysadm_t)
+dev_rw_lvm_control(sysadm_t)
+dev_rw_watchdog(sysadm_t)
 dev_rw_wireless(sysadm_t)
+dev_setattr_all_chr_files(sysadm_t)
 
 domain_dontaudit_read_all_domains_state(sysadm_t)
 domain_read_view_all_domains_keyrings(sysadm_t)
@@ -43,6 +47,8 @@ files_filetrans_named_content(sysadm_t)
 files_status_etc(sysadm_t)
 files_unconfined(sysadm_t)
 
+fs_manage_configfs_dirs(sysadm_t)
+fs_manage_configfs_files(sysadm_t)
 fs_mount_fusefs(sysadm_t)
 fs_rw_tracefs_files(sysadm_t)
 fs_mount_tracefs(sysadm_t)
@@ -75,6 +81,8 @@ init_exec(sysadm_t)
 init_exec_script_files(sysadm_t)
 init_dbus_chat(sysadm_t)
 init_script_role_transition(sysadm_r)
+init_start(sysadm_t)
+init_stop(sysadm_t)
 init_status(sysadm_t)
 init_reboot(sysadm_t)
 init_halt(sysadm_t)
@@ -246,6 +254,10 @@ optional_policy(`
         systemd_dbus_chat_localed(sysadm_t)
         systemd_hwdb_mmap_config(sysadm_t)
     ')
+
+	optional_policy(`
+		realmd_dbus_chat(sysadm_t)
+	')
 ')
 
 optional_policy(`
@@ -445,6 +457,10 @@ optional_policy(`
 ')
 
 optional_policy(`
+	pkcs_rw_shm(sysadm_t)
+')
+
+optional_policy(`
 	polipo_role(sysadm_r, sysadm_t)
 	polipo_named_filetrans_admin_cache_home_dirs(sysadm_t)
 	polipo_named_filetrans_admin_config_home_files(sysadm_t)
@@ -491,6 +507,10 @@ optional_policy(`
 ')
 
 optional_policy(`
+	rhcs_stream_connect_cluster(sysadm_t)
+')
+
+optional_policy(`
 	rpc_domtrans_nfsd(sysadm_t)
 ')
 
@@ -517,6 +537,10 @@ optional_policy(`
 
 optional_policy(`
 	samhain_admin(sysadm_t, sysadm_r)
+')
+
+optional_policy(`
+	sanlock_stream_connect(sysadm_t)
 ')
 
 optional_policy(`
@@ -547,6 +571,10 @@ optional_policy(`
 
 optional_policy(`
 	ssh_role_template(sysadm, sysadm_r, sysadm_t)
+')
+
+optional_policy(`
+	sssd_dbus_chat(sysadm_t)
 ')
 
 optional_policy(`

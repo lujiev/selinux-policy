@@ -96,6 +96,7 @@ domain_use_interactive_fds(sanlock_t)
 files_read_mnt_symlinks(sanlock_t)
 
 fs_getattr_cgroup(sanlock_t)
+fs_getattr_xattr_fs(sanlock_t)
 fs_rw_cephfs_files(sanlock_t)
 
 storage_raw_rw_fixed_disk(sanlock_t)
@@ -136,6 +137,12 @@ tunable_policy(`sanlock_enable_home_dirs',`
 	userdom_manage_user_home_content_dirs(sanlock_t)
 	userdom_manage_user_home_content_files(sanlock_t)
 	userdom_manage_user_home_content_symlinks(sanlock_t)
+')
+
+optional_policy(`
+	lvm_domtrans(sanlock_t)
+	lvm_sigkill(sanlock_t)
+	lvm_signal(sanlock_t)
 ')
 
 optional_policy(`

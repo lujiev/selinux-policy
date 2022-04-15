@@ -40,6 +40,7 @@ type chronyc_t;
 type chronyc_exec_t;
 domain_type(chronyc_t, chronyc_exec_t)
 init_system_domain(chronyc_t, chronyc_exec_t)
+init_nnp_daemon_domain(chronyc_t)
 role chronyc_roles types chronyc_t;
 
 ########################################
@@ -172,6 +173,14 @@ optional_policy(`
 
 optional_policy(`
     rolekit_dgram_send(chronyd_t)
+')
+
+optional_policy(`
+	sosreport_dgram_send(chronyd_t)
+')
+
+optional_policy(`
+	unconfined_dgram_send(chronyd_t)
 ')
 
 ########################################

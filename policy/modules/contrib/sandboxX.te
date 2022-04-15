@@ -48,12 +48,14 @@ tunable_policy(`deny_execmem',`',`
 ')
 
 allow sandbox_xserver_t self:fifo_file manage_fifo_file_perms;
+allow sandbox_xserver_t self:process setsched;
 allow sandbox_xserver_t self:shm create_shm_perms;
 allow sandbox_xserver_t self:tcp_socket create_stream_socket_perms;
 
 manage_dirs_pattern(sandbox_xserver_t, sandbox_file_t, sandbox_file_t)
 manage_files_pattern(sandbox_xserver_t, sandbox_file_t, sandbox_file_t)
 manage_sock_files_pattern(sandbox_xserver_t, sandbox_file_t, sandbox_file_t)
+allow sandbox_xserver_t sandbox_file_t:file map;
 allow sandbox_xserver_t sandbox_file_t:sock_file create_sock_file_perms;
 
 manage_dirs_pattern(sandbox_xserver_t, sandbox_xserver_tmpfs_t, sandbox_xserver_tmpfs_t)
@@ -362,9 +364,13 @@ selinux_get_fs_mount(sandbox_web_client_t)
 
 auth_use_nsswitch(sandbox_web_client_t)
 
+files_watch_etc_dirs(sandbox_web_client_t)
+files_watch_usr_dirs(sandbox_web_client_t)
+
 logging_send_syslog_msg(sandbox_web_client_t)
 
 miscfiles_map_generic_certs(sandbox_web_client_t)
+miscfiles_watch_fonts_dirs(sandbox_web_client_t)
 
 allow sandbox_web_type self:capability { setuid setgid };
 allow sandbox_web_type self:cap_userns { sys_admin sys_ptrace sys_chroot };

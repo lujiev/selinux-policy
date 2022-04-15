@@ -357,6 +357,7 @@ files_mountpoint(container_ro_file_t)
 
 allow svirt_t self:process ptrace;
 
+allow svirt_t self:netlink_rdma_socket create_socket_perms;
 # it was a part of auth_use_nsswitch
 allow svirt_t self:netlink_route_socket r_netlink_socket_perms;
 
@@ -969,6 +970,7 @@ dev_rw_infiniband_dev(virt_domain)
 dev_rw_dri(virt_domain)
 dev_rw_tpm(virt_domain)
 dev_rw_xserver_misc(virt_domain)
+dev_map_vhost(virt_domain)
 
 domain_use_interactive_fds(virt_domain)
 

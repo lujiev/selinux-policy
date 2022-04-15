@@ -5720,6 +5720,25 @@ interface(`files_read_system_conf_files',`
     read_lnk_files_pattern($1, etc_t, system_conf_t)
 ')
 
+#######################################
+## <summary>
+##	Watch manageable system configuration dirs in /etc
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`files_watch_system_conf_dirs',`
+	gen_require(`
+		type etc_t, system_conf_t;
+	')
+
+	files_search_etc($1)
+	watch_dirs_pattern($1, system_conf_t, system_conf_t)
+')
+
 ######################################
 ## <summary>
 ##  Manage manageable system configuration files in /etc.
@@ -6149,6 +6168,24 @@ interface(`files_delete_tmp_sockets',`
        ')
 
        delete_sock_files_pattern($1, tmp_t, tmp_t)
+')
+
+########################################
+## <summary>
+##	Delete generic tmp named pipes
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`files_delete_tmp_pipes',`
+       gen_require(`
+		type tmp_t;
+       ')
+
+       delete_fifo_files_pattern($1, tmp_t, tmp_t)
 ')
 
 ########################################
@@ -7878,6 +7915,24 @@ interface(`files_read_var_lib_files',`
 
 ########################################
 ## <summary>
+##	Manage generic files in /var/lib.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`files_manage_var_lib_files',`
+	gen_require(`
+		type var_lib_t;
+	')
+
+	manage_files_pattern($1, var_lib_t, var_lib_t)
+')
+
+########################################
+## <summary>
 ##	Read generic symbolic links in /var/lib
 ## </summary>
 ## <param name="domain">
@@ -7911,6 +7966,24 @@ interface(`files_manage_var_lib_symlinks',`
 	')
 
 	manage_lnk_files_pattern($1,var_lib_t,var_lib_t)
+')
+
+########################################
+## <summary>
+##	Manage generic directories in /var/lib.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`files_manage_var_lib_dirs',`
+	gen_require(`
+		type var_lib_t;
+	')
+
+	manage_dirs_pattern($1, var_lib_t, var_lib_t)
 ')
 
 ########################################

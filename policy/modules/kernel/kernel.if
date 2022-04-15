@@ -2333,6 +2333,24 @@ interface(`kernel_rw_fs_sysctls',`
 
 ########################################
 ## <summary>
+##	Do not audit attempts to search filesystem sysctl directories.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain to not audit.
+##	</summary>
+## </param>
+#
+interface(`kernel_dontaudit_search_fs_sysctl',`
+	gen_require(`
+		type sysctl_fs_t;
+	')
+
+	dontaudit $1 sysctl_fs_t:dir search;
+')
+
+########################################
+## <summary>
 ##	Read IRQ sysctls.
 ## </summary>
 ## <param name="domain">
@@ -2918,6 +2936,24 @@ interface(`kernel_dontaudit_getattr_unlabeled_blk_files',`
 	')
 
 	dontaudit $1 unlabeled_t:blk_file getattr;
+')
+
+########################################
+## <summary>
+##	Read unlabeled symbolic links.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`kernel_read_unlabeled_lnk_files',`
+	gen_require(`
+		type unlabeled_t;
+	')
+
+	allow $1 unlabeled_t:lnk_file read_lnk_file_perms;
 ')
 
 ########################################

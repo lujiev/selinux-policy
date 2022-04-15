@@ -22,11 +22,13 @@ systemd_unit_file(tlp_unit_file_t)
 #
 # tlp local policy
 #
-allow tlp_t self:capability { net_admin setuid sys_admin sys_rawio };
+allow tlp_t self:capability { net_admin setgid setuid sys_admin sys_rawio };
 allow tlp_t self:unix_stream_socket create_stream_socket_perms;
 allow tlp_t self:udp_socket create_socket_perms;
 allow tlp_t self:unix_dgram_socket create_socket_perms;
 allow tlp_t self:netlink_generic_socket create_socket_perms;
+
+allow tlp_t tlp_unit_file_t:file read_file_perms;
 
 manage_dirs_pattern(tlp_t, tlp_var_run_t, tlp_var_run_t)
 manage_files_pattern(tlp_t, tlp_var_run_t, tlp_var_run_t)
@@ -60,6 +62,9 @@ files_read_kernel_modules(tlp_t)
 files_map_kernel_modules(tlp_t)
 files_load_kernel_modules(tlp_t)
 
+init_status(tlp_t)
+init_stream_connectto(tlp_t)
+
 modutils_exec_kmod(tlp_t)
 modutils_read_module_config(tlp_t)
 modutils_read_module_deps_files(tlp_t)
@@ -85,12 +90,19 @@ optional_policy(`
 ')
 
 optional_policy(`
+	networkmanager_dbus_chat(tlp_t)
+')
+
+optional_policy(`
     sssd_read_public_files(tlp_t)
     sssd_stream_connect(tlp_t)
 ')
 
 optional_policy(`
-    systemd_rfkill_domtrans(tlp_t)
+	systemd_rfkill_domtrans(tlp_t)
+	systemd_exec_systemctl(tlp_t)
+	systemd_read_unit_files(tlp_t)
+	systemd_search_unit_dirs(tlp_t)
 ')
 
 optional_policy(`
