@@ -69,7 +69,7 @@ auth_read_passwd(sblim_domain)
 # Gatherd local policy
 #
 
-allow sblim_gatherd_t self:capability { dac_read_search  sys_nice sys_ptrace };
+allow sblim_gatherd_t self:capability { dac_read_search kill sys_nice sys_ptrace };
 allow sblim_gatherd_t self:process { setsched signal };
 allow sblim_gatherd_t self:fifo_file rw_fifo_file_perms;
 allow sblim_gatherd_t self:unix_stream_socket { accept listen };
@@ -154,6 +154,8 @@ allow sblim_sfcbd_t self:capability { sys_ptrace setgid setuid };
 dontaudit sblim_sfcbd_t self:cap_userns sys_ptrace;
 allow sblim_sfcbd_t self:process signal;
 allow sblim_sfcbd_t self:unix_stream_socket connectto;
+
+allow sblim_sfcbd_t sblim_reposd_t:unix_stream_socket connectto;
 
 manage_dirs_pattern(sblim_sfcbd_t, sblim_sfcb_tmpfs_t, sblim_sfcb_tmpfs_t)
 manage_files_pattern(sblim_sfcbd_t, sblim_sfcb_tmpfs_t, sblim_sfcb_tmpfs_t)

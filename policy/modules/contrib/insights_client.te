@@ -21,6 +21,9 @@ files_config_file(insights_client_etc_rw_t)
 type insights_client_tmp_t;
 files_tmp_file(insights_client_tmp_t)
 
+type insights_client_cache_t;
+files_type(insights_client_cache_t)
+
 type insights_client_var_lib_t;
 files_type(insights_client_var_lib_t)
 
@@ -33,8 +36,9 @@ files_pid_file(insights_client_var_run_t)
 #
 allow insights_client_t self:capability dac_override;
 allow insights_client_t self:fifo_file rw_fifo_file_perms;
-allow insights_client_t self:tcp_socket { bind connect create getattr getopt setopt };
-allow insights_client_t self:udp_socket { connect create getattr setopt };
+allow insights_client_t self:tcp_socket create_socket_perms;
+allow insights_client_t self:udp_socket create_socket_perms;
+allow insights_client_t self:unix_dgram_socket create_socket_perms;
 allow insights_client_t self:unix_stream_socket create_stream_socket_perms;
 
 manage_dirs_pattern(insights_client_t, insights_client_etc_t, insights_client_etc_t)
@@ -45,6 +49,8 @@ filetrans_pattern(insights_client_t, insights_client_etc_t, insights_client_etc_
 manage_dirs_pattern(insights_client_t, insights_client_tmp_t, insights_client_tmp_t)
 manage_files_pattern(insights_client_t, insights_client_tmp_t, insights_client_tmp_t)
 files_tmp_filetrans(insights_client_t, insights_client_tmp_t, { dir file })
+
+manage_files_pattern(insights_client_t, insights_client_cache_t, insights_client_cache_t)
 
 manage_dirs_pattern(insights_client_t, insights_client_var_log_t, insights_client_var_log_t)
 manage_files_pattern(insights_client_t, insights_client_var_log_t, insights_client_var_log_t)
@@ -65,7 +71,7 @@ auth_read_passwd(insights_client_t)
 corecmd_exec_bin(insights_client_t)
 corenet_tcp_bind_generic_node(insights_client_t)
 corenet_tcp_connect_http_port(insights_client_t)
- 
+
 domain_use_interactive_fds(insights_client_t)
 
 files_manage_etc_symlinks(insights_client_t)
@@ -80,8 +86,17 @@ miscfiles_read_localization(insights_client_t)
 sysnet_read_config(insights_client_t)
 
 optional_policy(`
+	gnome_search_gconf(insights_client_t)
+')
+
+optional_policy(`
 	gpg_exec(insights_client_t)
+	gpg_manage_admin_home_content(insights_client_t)
 	gpg_manage_home_content(insights_client_t)
+')
+
+optional_policy(`
+	rhnsd_read_config(insights_client_t)
 ')
 
 optional_policy(`

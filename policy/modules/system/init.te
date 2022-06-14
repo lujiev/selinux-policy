@@ -419,6 +419,8 @@ userdom_nnp_transition_login_userdomain(init_t)
 userdom_noatsecure_login_userdomain(init_t)
 userdom_sigchld_login_userdomain(init_t)
 userdom_use_user_ptys(init_t)
+userdom_watch_user_ptys(init_t)
+userdom_watch_reads_user_ptys(init_t)
 
 allow init_t self:process setsched;
 
@@ -448,6 +450,11 @@ corecmd_shell_domtrans(init_t, initrc_t)
 storage_raw_rw_fixed_disk(init_t)
 
 sysnet_read_dhcpc_state(init_t)
+
+optional_policy(`
+	anaconda_stream_connect(init_t)
+	anaconda_create_unix_stream_sockets(init_t)
+')
 
 optional_policy(`
     bootloader_domtrans(init_t)
