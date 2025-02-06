@@ -15,6 +15,7 @@ allow sysadm_t self:netlink_generic_socket create_socket_perms;
 allow sysadm_t self:tipc_socket create_socket_perms;
 allow sysadm_t self:sctp_socket create_socket_perms;
 allow sysadm_t self:rawip_socket create_socket_perms;
+allow sysadm_t self:key_socket create_socket_perms;
 
 allow sysadm_t self:system all_system_perms;
 
@@ -23,9 +24,13 @@ allow sysadm_t self:system all_system_perms;
 #
 # Local policy
 #
+kernel_io_uring_use(sysadm_t)
 kernel_manage_perf_event(sysadm_t)
+kernel_prog_run_bpf(sysadm_t)
 kernel_read_fs_sysctls(sysadm_t)
 kernel_read_all_proc(sysadm_t)
+kernel_secretmem_use(sysadm_t)
+kernel_kvm_gmem_use(sysadm_t)
 kernel_unconfined(sysadm_t)
 
 auth_manage_shadow(sysadm_t)
@@ -33,6 +38,7 @@ auth_manage_shadow(sysadm_t)
 corecmd_exec_shell(sysadm_t)
 
 dev_filetrans_all_named_dev(sysadm_t)
+dev_rw_ipmi_dev(sysadm_t)
 dev_rw_autofs(sysadm_t)
 dev_rw_lvm_control(sysadm_t)
 dev_rw_watchdog(sysadm_t)
@@ -43,6 +49,7 @@ domain_dontaudit_read_all_domains_state(sysadm_t)
 domain_read_view_all_domains_keyrings(sysadm_t)
 
 files_read_kernel_modules(sysadm_t)
+files_map_kernel_modules(sysadm_t)
 files_filetrans_named_content(sysadm_t)
 files_status_etc(sysadm_t)
 files_unconfined(sysadm_t)
@@ -52,6 +59,7 @@ fs_manage_configfs_files(sysadm_t)
 fs_mount_fusefs(sysadm_t)
 fs_rw_tracefs_files(sysadm_t)
 fs_mount_tracefs(sysadm_t)
+fs_read_nsfs_files(sysadm_t)
 
 storage_filetrans_all_named_dev(sysadm_t)
 storage_read_scsi_generic(sysadm_t)
@@ -89,7 +97,7 @@ init_halt(sysadm_t)
 init_undefined(sysadm_t)
 init_ioctl_stream_sockets(sysadm_t)
 init_prog_run_bpf(sysadm_t)
-init_domtrans_script(sysadm_t)
+init_run_script(sysadm_t, sysadm_r)
 
 logging_filetrans_named_content(sysadm_t)
 logging_map_audit_config(sysadm_t)
@@ -109,6 +117,8 @@ userdom_manage_tmp_role(sysadm_r, sysadm_t)
 userdom_exec_admin_home_files(sysadm_t)
 userdom_manage_admin_files(sysadm_t)
 userdom_manage_admin_dirs(sysadm_t)
+
+userdom_prog_run_bpf_userdomain(sysadm_t)
 
 corenet_ib_access_unlabeled_pkeys(sysadm_t)
 corenet_ib_manage_subnet_unlabeled_endports(sysadm_t)
@@ -253,7 +263,6 @@ optional_policy(`
         systemd_dbus_chat_timedated(sysadm_t)
         systemd_dbus_chat_hostnamed(sysadm_t)
         systemd_dbus_chat_localed(sysadm_t)
-        systemd_hwdb_mmap_config(sysadm_t)
     ')
 
 	optional_policy(`
@@ -265,10 +274,6 @@ optional_policy(`
 	dcc_run_cdcc(sysadm_t, sysadm_r)
 	dcc_run_client(sysadm_t, sysadm_r)
 	dcc_run_dbclean(sysadm_t, sysadm_r)
-')
-
-optional_policy(`
-	ddcprobe_run(sysadm_t, sysadm_r)
 ')
 
 optional_policy(`
@@ -306,6 +311,11 @@ optional_policy(`
 optional_policy(`
        	gnome_filetrans_fontconfig_home_content(sysadm_t)
 ')
+
+optional_policy(`
+	gpg_filetrans_admin_home_content(sysadm_t)
+')
+
 optional_policy(`
 	hostname_run(sysadm_t, sysadm_r)
 ')
@@ -317,6 +327,10 @@ optional_policy(`
 
 optional_policy(`
 	hadoop_role(sysadm_r, sysadm_t)
+')
+
+optional_policy(`
+	insights_client_filetrans_named_content(sysadm_t)
 ')
 
 optional_policy(`
@@ -351,6 +365,10 @@ optional_policy(`
 ')
 
 optional_policy(`
+	iscsi_stream_connect(sysadm_t)
+')
+
+optional_policy(`
 	kerberos_exec_kadmind(sysadm_t)
 	kerberos_filetrans_named_content(sysadm_t)
 ')
@@ -361,6 +379,10 @@ optional_policy(`
 
 optional_policy(`
 	libs_run_ldconfig(sysadm_t, sysadm_r)
+')
+
+optional_policy(`
+	lldpad_dgram_send(sysadm_t)
 ')
 
 optional_policy(`
@@ -545,7 +567,7 @@ optional_policy(`
 ')
 
 optional_policy(`
-	screen_role_template(sysadm, sysadm_r, sysadm_t)
+	screen_admin_role_template(sysadm, sysadm_r, sysadm_t)
     allow sysadm_screen_t self:capability { dac_read_search dac_override chown };
 ')
 
@@ -588,6 +610,9 @@ optional_policy(`
 
 optional_policy(`
 	sudo_role_template(sysadm, sysadm_r, sysadm_t)
+	optional_policy(`
+		crontab_admin_domtrans(sysadm_sudo_t)
+	')
 ')
 
 optional_policy(`
@@ -599,9 +624,11 @@ optional_policy(`
 	systemd_passwd_agent_run(sysadm_t, sysadm_r)
 	systemd_config_all_services(sysadm_t)
 	systemd_dbus_chat_machined(sysadm_t)
+        systemd_hwdb_mmap_config(sysadm_t)
 	systemd_manage_all_unit_files(sysadm_t)
 	systemd_manage_all_unit_lnk_files(sysadm_t)
 	systemd_manage_unit_dirs(sysadm_t)
+	systemd_nsresourced_prog_run_bpf(sysadm_t)
 	systemd_login_status(sysadm_t)
 	systemd_login_reboot(sysadm_t)
 	systemd_login_halt(sysadm_t)
@@ -631,6 +658,10 @@ optional_policy(`
 ')
 
 optional_policy(`
+	targetcli_filetrans_admin_home_content(sysadm_t)
+')
+
+optional_policy(`
 	tuned_dbus_chat(sysadm_t)
 ')
 
@@ -657,6 +688,7 @@ optional_policy(`
 ')
 
 optional_policy(`
+	virt_dbus_chat_dbus(sysadm_t)
 	virt_stream_connect(sysadm_t)
 	virt_filetrans_home_content(sysadm_t)
 	virt_manage_pid_dirs(sysadm_t)

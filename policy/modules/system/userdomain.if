@@ -349,6 +349,24 @@ interface(`userdom_watch_tmp_dirs',`
 
 #######################################
 ## <summary>
+##      Watch_sb user temporary directories
+## </summary>
+## <param name="domain">
+##      <summary>
+##      Domain allowed access.
+##      </summary>
+## </param>
+#
+interface(`userdom_watch_sb_tmp_dirs',`
+	gen_require(`
+		type user_tmp_t;
+	')
+
+	watch_sb_dirs_pattern($1, user_tmp_t, user_tmp_t)
+')
+
+#######################################
+## <summary>
 ##	Watch_mount user temporary directories
 ## </summary>
 ## <param name="domain">
@@ -576,7 +594,6 @@ interface(`userdom_exec_user_tmp_files',`
 
 	allow $1 user_tmp_t:file entrypoint;
 	exec_files_pattern($1, user_tmp_t, user_tmp_t)
-	dontaudit $1 user_tmp_t:sock_file execute;
 	files_search_tmp($1)
 ')
 
@@ -1171,6 +1188,7 @@ template(`userdom_login_user_template', `
 	miscfiles_exec_tetex_data($1_usertype)
 
 	seutil_read_config($1_usertype)
+	selinux_watch_config($1_usertype)
 	seutil_read_file_contexts($1_usertype)
 	seutil_read_default_contexts($1_usertype)
 	seutil_exec_setfiles($1_usertype)
@@ -1501,11 +1519,12 @@ tunable_policy(`deny_bluetooth',`',`
 	corenet_tcp_bind_xserver_port($1_t)
 	corenet_tcp_bind_generic_node($1_usertype)
 
-    init_domtrans($1_t)
+	init_exec($1_t)
     init_rw_stream_sockets($1_t)
 
 	storage_rw_fuse($1_t)
 
+	files_getattr_non_security_dirs($1_t)
 	files_exec_usr_files($1_t)
    # cjp: why?
 	files_read_kernel_symbol_table($1_t)
@@ -1663,16 +1682,16 @@ template(`userdom_admin_user_template',`
 	# Manipulate other users crontab.
 	allow $1_t self:passwd crontab;
 
-    allow $1_t self:bpf { map_create map_read map_write prog_load prog_run };
+	allow $1_t self:bpf { map_create map_read map_write prog_load prog_run };
 
-    allow $1_t self:alg_socket create_stream_socket_perms;
-    allow $1_t self:dccp_socket create_stream_socket_perms;
+	allow $1_t self:alg_socket create_stream_socket_perms;
+	allow $1_t self:dccp_socket create_stream_socket_perms;
 
-    allow $1_t self:cap_userns sys_ptrace;
+	allow $1_t self:cap_userns sys_ptrace;
 
-    tunable_policy(`deny_bluetooth',`',`
-        allow $1_t self:bluetooth_socket create_stream_socket_perms;
-    ')
+	tunable_policy(`deny_bluetooth',`',`
+		allow $1_t self:bluetooth_socket create_stream_socket_perms;
+	')
 
 	auth_use_nsswitch($1_t)
 
@@ -1741,7 +1760,7 @@ template(`userdom_admin_user_template',`
 
 	storage_raw_read_removable_device($1_t)
 	storage_raw_write_removable_device($1_t)
-	storage_dontaudit_read_fixed_disk($1_t)
+	storage_raw_rw_fixed_disk($1_t)
 
 	term_use_all_inherited_terms($1_t)
 	term_use_unallocated_ttys($1_t)
@@ -2279,6 +2298,24 @@ interface(`userdom_create_user_home_dirs',`
 	')
 
 	allow $1 user_home_dir_t:dir create_dir_perms;
+')
+
+########################################
+## <summary>
+##	Watch user home directories.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`userdom_watch_user_home_dirs',`
+	gen_require(`
+		type user_home_dir_t;
+	')
+
+	allow $1 user_home_dir_t:dir watch_dir_perms;
 ')
 
 ########################################
@@ -3032,8 +3069,7 @@ interface(`userdom_exec_user_home_content_files',`
 
 	files_search_home($1)
 	exec_files_pattern($1, { user_home_dir_t user_home_type }, user_home_type)
-	dontaudit $1 user_home_type:sock_file execute;
-	')
+')
 
 ########################################
 ## <summary>
@@ -3486,6 +3522,7 @@ interface(`userdom_rw_user_tmp_files',`
 	rw_files_pattern($1, user_tmp_t, user_tmp_t)
 	files_search_tmp($1)
 ')
+
 ########################################
 ## <summary>
 ##	Read and write user temporary files.
@@ -3504,6 +3541,24 @@ interface(`userdom_rw_user_tmp_sock_files',`
 	allow $1 user_tmp_t:dir list_dir_perms;
     allow $1 user_tmp_t:sock_file rw_inherited_sock_file_perms;
 	files_search_tmp($1)
+')
+
+########################################
+## <summary>
+##	Relabelfrom user temporary socket files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`userdom_relabelfrom_user_tmp_sock_files',`
+	gen_require(`
+		type user_tmp_t;
+	')
+
+	allow $1 user_tmp_t:sock_file relabelfrom_file_perms;
 ')
 
 ########################################
@@ -4197,6 +4252,52 @@ interface(`userdom_spec_domtrans_unpriv_users',`
 	allow unpriv_userdomain $1:process sigchld;
 ')
 
+########################################
+## <summary>
+##	Execute a shell in all admin user domains.  This
+##	is an explicit transition, requiring the
+##	caller to use setexeccon().
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed to transition.
+##	</summary>
+## </param>
+#
+interface(`userdom_spec_domtrans_admin_users',`
+	gen_require(`
+		attribute admindomain;
+	')
+
+	corecmd_shell_spec_domtrans($1, admindomain)
+	allow admindomain $1:fd use;
+	allow admindomain $1:fifo_file rw_file_perms;
+	allow admindomain $1:process sigchld;
+')
+
+########################################
+## <summary>
+##	Execute a shell in all confined admin user domains.  This
+##	is an explicit transition, requiring the
+##	caller to use setexeccon().
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed to transition.
+##	</summary>
+## </param>
+#
+interface(`userdom_spec_domtrans_confined_admin_users',`
+	gen_require(`
+		attribute confined_admindomain;
+	')
+
+	corecmd_shell_spec_domtrans($1, confined_admindomain)
+	allow confined_admindomain $1:fd use;
+	allow confined_admindomain $1:fifo_file rw_file_perms;
+	allow confined_admindomain $1:process sigchld;
+')
+
 #####################################
 ## <summary>
 ##  Allow domain dyntrans to unpriv userdomain.
@@ -4646,6 +4747,25 @@ interface(`userdom_dontaudit_use_user_ttys',`
 	dontaudit $1 user_tty_device_t:chr_file rw_inherited_file_perms;
 ')
 
+#######################################
+## <summary>
+##	Relabel from and to user ttys.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`userdom_relabel_user_ttys',`
+	gen_require(`
+		type user_tty_device_t;
+	')
+
+	dev_list_all_dev_nodes($1)
+	allow $1 user_tty_device_t:chr_file relabel_chr_file_perms;
+')
+
 ########################################
 ## <summary>
 ##	Read the process state of all user domains.
@@ -4813,6 +4933,24 @@ interface(`userdom_read_all_users_keys',`
 
 ########################################
 ## <summary>
+##	View keys for all user domains.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`userdom_view_all_users_keys',`
+	gen_require(`
+		attribute userdomain;
+	')
+
+	allow $1 userdomain:key view;
+')
+
+########################################
+## <summary>
 ##	Write keys for all user domains.
 ## </summary>
 ## <param name="domain">
@@ -4882,6 +5020,7 @@ interface(`userdom_dbus_send_all_users',`
 	')
 
 	allow $1 userdomain:dbus send_msg;
+	allow userdomain $1:dbus send_msg;
 	ps_process_pattern($1, userdomain)
 ')
 
@@ -6638,6 +6777,42 @@ interface(`userdom_login_userdomain',`
 
 ########################################
 ## <summary>
+##	Get attributes of login_userdomain stream.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`userdom_getattr_stream_userdomain',`
+	gen_require(`
+		attribute login_userdomain;
+	')
+
+	allow $1 login_userdomain:unix_stream_socket getattr;
+')
+
+########################################
+## <summary>
+##	Append to login_userdomain stream.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`userdom_append_stream_userdomain',`
+	gen_require(`
+		attribute login_userdomain;
+	')
+
+	allow $1 login_userdomain:unix_stream_socket { getattr append };
+')
+
+########################################
+## <summary>
 ##	Do not audit attempts to check the 
 ##	access on user content files
 ## </summary>
@@ -6807,4 +6982,22 @@ template(`userdom_security_admin_template',`
 	optional_policy(`
 		samhain_run($1, $2)
 	')
+')
+#
+########################################
+## <summary>
+##	Allow caller domain to run bpftool on userdomain
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`userdom_prog_run_bpf_userdomain',`
+	gen_require(`
+		attribute userdomain;
+	')
+
+	allow $1 userdomain:bpf { map_create map_read map_write prog_load prog_run };
 ')

@@ -17,6 +17,7 @@ type colord_t;
 type colord_exec_t;
 dbus_system_domain(colord_t, colord_exec_t)
 init_daemon_domain(colord_t, colord_exec_t)
+init_nnp_daemon_domain(colord_t)
 
 type colord_tmp_t;
 files_tmp_file(colord_tmp_t)
@@ -99,6 +100,7 @@ domain_use_interactive_fds(colord_t)
 files_list_mnt(colord_t)
 files_watch_usr_dirs(colord_t)
 files_map_var_lib_files(colord_t)
+files_mmap_isid_files(colord_t)
 files_read_var_lib_files(colord_t)
 
 fs_getattr_all_fs(colord_t)
@@ -145,6 +147,7 @@ optional_policy(`
 	# Fixes lots of breakage in F16 on upgrade
 	gnome_read_generic_data_home_files(colord_t)
     gnome_map_generic_data_home_files(colord_t)
+	gnome_initial_setup_read_var_run_files(colord_t)
 ')
 
 optional_policy(`

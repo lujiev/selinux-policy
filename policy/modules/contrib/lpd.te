@@ -13,7 +13,9 @@ policy_module(lpd, 1.14.0)
 gen_tunable(use_lpd_server, false)
 
 attribute_role checkpc_roles;
+
 attribute_role lpr_roles;
+roleattribute system_r lpr_roles;
 
 type checkpc_t;
 type checkpc_exec_t;
@@ -289,6 +291,10 @@ optional_policy(`
 
 optional_policy(`
 	gnome_stream_connect_gkeyringd(lpr_t)
+')
+
+optional_policy(`
+	insights_client_write_tmp(lpr_t)
 ')
 
 optional_policy(`

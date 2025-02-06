@@ -35,6 +35,7 @@ init_system_domain(traceroute_t, traceroute_exec_t)
 # Perform network administration operations and have raw access to the network.
 allow netutils_t self:capability { chown dac_read_search net_admin net_raw setuid setgid sys_chroot  setpcap };
 dontaudit netutils_t self:capability { sys_admin sys_tty_config };
+allow netutils_t self:capability2 bpf;
 allow netutils_t self:process { setcap signal_perms };
 allow netutils_t self:netlink_generic_socket create_socket_perms;
 allow netutils_t self:netlink_rdma_socket create_socket_perms;
@@ -74,6 +75,7 @@ corenet_tcp_sendrecv_all_ports(netutils_t)
 corenet_udp_sendrecv_all_ports(netutils_t)
 corenet_tcp_connect_all_ports(netutils_t)
 corenet_sendrecv_all_client_packets(netutils_t)
+corenet_rawip_bind_unreserved_port(netutils_t)
 corenet_udp_bind_generic_node(netutils_t)
 
 dev_read_sysfs(netutils_t)
@@ -137,6 +139,8 @@ allow ping_t self:rawip_socket create_socket_perms;
 allow ping_t self:packet_socket create_socket_perms;
 allow ping_t self:netlink_route_socket create_netlink_socket_perms;
 allow ping_t self:icmp_socket create_socket_perms;
+
+kernel_read_net_sysctls(ping_t)
 
 corenet_all_recvfrom_netlabel(ping_t)
 corenet_tcp_sendrecv_generic_if(ping_t)
@@ -214,6 +218,7 @@ optional_policy(`
 
 allow traceroute_t self:capability { net_admin net_raw setuid setgid };
 dontaudit traceroute_t self:capability { sys_admin };
+allow traceroute_t self:capability2 bpf;
 allow traceroute_t self:netlink_generic_socket create_socket_perms;
 allow traceroute_t self:netlink_rdma_socket create_socket_perms;
 allow traceroute_t self:rawip_socket create_socket_perms;

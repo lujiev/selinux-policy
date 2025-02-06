@@ -23,10 +23,14 @@ gen_tunable(staff_use_svirt, false)
 #
 
 allow staff_t self:cap_userns { setpcap };
+allow staff_t self:io_uring sqpoll;
 allow staff_t self:netlink_generic_socket { create_socket_perms };
+allow staff_t self:netlink_route_socket nlmsg_write;
 
 corenet_ib_access_unlabeled_pkeys(staff_t)
+corenet_tcp_bind_generic_port(staff_t)
 
+kernel_io_uring_use(staff_t)
 kernel_read_ring_buffer(staff_t)
 kernel_getattr_core_if(staff_t)
 kernel_getattr_message_if(staff_t)
@@ -70,7 +74,10 @@ auth_run_pam_console(staff_t, staff_r)
 
 init_dbus_chat(staff_t)
 init_dbus_chat_script(staff_t)
+init_getattr_pid_blk_file(staff_t)
+init_getattr_pid_chr_file(staff_t)
 init_status(staff_t)
+init_watch_pid_dir(staff_t)
 
 miscfiles_read_hwdata(staff_t)
 
@@ -101,6 +108,10 @@ optional_policy(`
 
 optional_policy(`
 	blueman_dbus_chat(staff_t)
+')
+
+optional_policy(`
+	boltd_write_var_run_pipes(staff_t)
 ')
 
 optional_policy(`
@@ -174,6 +185,10 @@ optional_policy(`
 ')
 
 optional_policy(`
+	kerberos_read_keytab(staff_t)
+')
+
+optional_policy(`
 	kerneloops_dbus_chat(staff_t)
 ')
 
@@ -192,6 +207,10 @@ optional_policy(`
 
 optional_policy(`
     iotop_run(staff_t, staff_r)
+')
+
+optional_policy(`
+	lldpad_dgram_send(staff_t)
 ')
 
 optional_policy(`
@@ -312,6 +331,9 @@ optional_policy(`
 
 optional_policy(`
 	sudo_role_template(staff, staff_r, staff_t)
+	optional_policy(`
+		crontab_domtrans(staff_sudo_t)
+	')
 ')
 
 optional_policy(`
@@ -327,6 +349,7 @@ optional_policy(`
 ')
 
 optional_policy(`
+	virt_dbus_chat_dbus(staff_t)
 	virt_getattr_exec(staff_t)
 	virt_search_images(staff_t)
 	virt_stream_connect(staff_t)

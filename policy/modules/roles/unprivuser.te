@@ -42,6 +42,7 @@ seutil_read_module_store(user_t)
 
 init_dbus_chat(user_t)
 init_status(user_t)
+init_watch_pid_dir(user_t)
 
 mount_signal(user_t)
 mount_run_ecryptmount(user_t, user_r)
@@ -67,6 +68,10 @@ optional_policy(`
 ')
 
 optional_policy(`
+	boltd_write_var_run_pipes(user_t)
+')
+
+optional_policy(`
 	colord_dbus_chat(user_t)
 ')
 
@@ -88,6 +93,10 @@ optional_policy(`
 
 optional_policy(`
 	irc_role(user_r, user_t)
+')
+
+optional_policy(`
+	lldpad_dgram_send(user_t)
 ')
 
 optional_policy(`
@@ -128,6 +137,11 @@ optional_policy(`
 
 optional_policy(`
 	rtkit_scheduled(user_t)
+')
+
+optional_policy(`
+	setroubleshoot_dbus_chat(user_t)
+	setroubleshoot_dbus_chat_fixit(user_t)
 ')
 
 optional_policy(`

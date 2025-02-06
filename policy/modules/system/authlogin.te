@@ -413,7 +413,7 @@ term_getattr_all_ttys(utempter_t)
 term_getattr_all_ptys(utempter_t)
 term_dontaudit_use_all_ttys(utempter_t)
 term_dontaudit_use_all_ptys(utempter_t)
-term_dontaudit_use_ptmx(utempter_t)
+term_use_ptmx(utempter_t)
 
 auth_use_nsswitch(utempter_t)
 
@@ -423,6 +423,7 @@ domain_use_interactive_fds(utempter_t)
 
 logging_search_logs(utempter_t)
 
+userdom_append_stream_userdomain(utempter_t)
 userdom_use_inherited_user_terminals(utempter_t)
 # Allow utemper to write to /tmp/.xses-*
 userdom_write_user_tmp_files(utempter_t)
@@ -571,6 +572,10 @@ optional_policy(`
 ')
 
 optional_policy(`
+	systemd_homed_stream_connect(nsswitch_domain)
+')
+
+optional_policy(`
 	systemd_userdbd_stream_connect(nsswitch_domain)
 	systemd_machined_stream_connect(nsswitch_domain)
 ')
@@ -592,7 +597,7 @@ allow login_pgm self:netlink_kobject_uevent_socket create_socket_perms;
 allow login_pgm self:netlink_selinux_socket create_socket_perms; 
 allow login_pgm self:capability ipc_lock;
 dontaudit login_pgm self:capability net_admin;
-allow login_pgm self:process setkeycreate;
+allow login_pgm self:process { setcap setkeycreate };
 allow login_pgm self:key manage_key_perms;
 userdom_manage_all_users_keys(login_pgm)
 allow login_pgm nsswitch_domain:key manage_key_perms;
@@ -686,12 +691,6 @@ optional_policy(`
 optional_policy(`
 	oddjob_dbus_chat(login_pgm)
 	oddjob_domtrans_mkhomedir(login_pgm)
-')
-
-optional_policy(`
-	openct_stream_connect(login_pgm)
-	openct_signull(login_pgm)
-	openct_read_pid_files(login_pgm)
 ')
 
 optional_policy(`

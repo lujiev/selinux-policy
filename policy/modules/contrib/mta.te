@@ -131,6 +131,10 @@ optional_policy(`
 ')
 
 optional_policy(`
+	ddclient_var_filetrans(system_mail_t, mail_home_rw_t, dir, ".esmtp_queue")
+')
+
+optional_policy(`
 	exim_domtrans(user_mail_domain)
 	exim_manage_log(user_mail_domain)
 	exim_manage_spool_files(user_mail_domain)
@@ -188,7 +192,7 @@ allow system_mail_t mail_home_t:file manage_file_perms;
 
 read_files_pattern(system_mail_t, mailcontent_type, mailcontent_type)
 
-kernel_search_network_sysctl(system_mail_t)
+kernel_read_net_sysctls(system_mail_t)
 
 corecmd_exec_shell(system_mail_t)
 
@@ -257,6 +261,10 @@ optional_policy(`
 ')
 
 optional_policy(`
+	certmonger_read_inherited_pid_files(system_mail_t)
+')
+
+optional_policy(`
 	courier_stream_connect_authdaemon(system_mail_t)
 ')
 
@@ -281,6 +289,11 @@ optional_policy(`
 
 optional_policy(`
     dbus_system_bus_client(system_mail_t)
+')
+
+optional_policy(`
+	exim_manage_spool_dirs(system_mail_t)
+	exim_manage_spool_files(system_mail_t)
 ')
 
 optional_policy(`

@@ -82,6 +82,7 @@ files_type(ipsec_mgmt_devpts_t)
 
 allow ipsec_t self:capability { chown net_admin dac_read_search dac_override setpcap sys_admin sys_nice net_raw setuid setgid };
 dontaudit ipsec_t self:capability sys_tty_config;
+allow ipsec_t self:capability2 bpf;
 allow ipsec_t self:process { getcap setcap getsched signal signull setsched sigkill };
 allow ipsec_t self:tcp_socket create_stream_socket_perms;
 allow ipsec_t self:udp_socket create_socket_perms;
@@ -179,6 +180,7 @@ corenet_rw_tun_tap_dev(ipsec_t)
 
 dev_read_sysfs(ipsec_t)
 dev_read_rand(ipsec_t)
+dev_read_tpm(ipsec_t)
 dev_read_urand(ipsec_t)
 
 domain_use_interactive_fds(ipsec_t)
@@ -190,6 +192,7 @@ files_dontaudit_search_home(ipsec_t)
 files_dontaudit_write_all_files(ipsec_t)
 
 fs_getattr_all_fs(ipsec_t)
+fs_read_nsfs_files(ipsec_mgmt_t)
 fs_search_auto_mountpoints(ipsec_t)
 
 selinux_compute_access_vector(ipsec_t)

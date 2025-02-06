@@ -327,11 +327,6 @@ optional_policy(`
 ')
 
 optional_policy(`
-	djbdns_search_tinydns_keys(crond_t)
-	djbdns_link_tinydns_keys(crond_t)
-')
-
-optional_policy(`
 	locallogin_search_keys(crond_t)
 	locallogin_link_keys(crond_t)
 ')
@@ -509,8 +504,6 @@ files_read_var_files(system_cronjob_t)
 # for nscd:
 files_dontaudit_search_pids(system_cronjob_t)
 # Access other spool directories like
-# /var/spool/anacron and /var/spool/slrnpull.
-files_manage_generic_spool(system_cronjob_t)
 files_create_boot_flag(system_cronjob_t)
 
 mls_file_read_to_clearance(system_cronjob_t)
@@ -545,6 +538,7 @@ ifdef(`distro_redhat',`
 	# via redirection of standard out.
 	optional_policy(`
 		rpm_manage_log(system_cronjob_t)
+		rpm_transition_script(system_cronjob_t, system_r)
 	')
 ')
 
@@ -570,6 +564,10 @@ optional_policy(`
 	apache_manage_lib(system_cronjob_t)
 	apache_delete_cache_dirs(system_cronjob_t)
 	apache_delete_cache_files(system_cronjob_t)
+')
+
+optional_policy(`
+	avahi_dbus_chat(system_cronjob_t)
 ')
 
 optional_policy(`
@@ -609,6 +607,11 @@ optional_policy(`
 	inn_manage_log(system_cronjob_t)
 	inn_manage_pid(system_cronjob_t)
 	inn_read_config(system_cronjob_t)
+')
+
+optional_policy(`
+	insights_client_filetrans_run(system_cronjob_t)
+	insights_client_filetrans_tmp(system_cronjob_t)
 ')
 
 optional_policy(`
@@ -665,6 +668,10 @@ optional_policy(`
 optional_policy(`
 	samba_read_config(system_cronjob_t)
 	samba_read_log(system_cronjob_t)
+')
+
+optional_policy(`
+	setroubleshoot_dbus_chat(system_cronjob_t)
 ')
 
 optional_policy(`
@@ -862,6 +869,8 @@ userdom_use_inherited_user_terminals(crontab_domain)
 # Read user crontabs
 userdom_read_user_home_content_files(crontab_domain)
 userdom_read_user_home_content_symlinks(crontab_domain)
+userdom_dontaudit_write_user_home_content_files(crontab_domain)
+userdom_dontaudit_manage_user_home_content_dirs(crontab_domain)
 
 tunable_policy(`fcron_crond',`
 	# fcron wants an instant update of a crontab change for the administrator

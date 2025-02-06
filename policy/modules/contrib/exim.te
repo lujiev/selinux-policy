@@ -75,6 +75,7 @@ ifdef(`distro_debian',`
 allow exim_t self:capability { chown dac_read_search dac_override fowner setuid setgid sys_resource };
 allow exim_t self:process { setrlimit setpgid };
 allow exim_t self:fifo_file rw_fifo_file_perms;
+allow exim_t self:unix_dgram_socket sendto;
 allow exim_t self:unix_stream_socket { accept listen };
 allow exim_t self:tcp_socket { accept listen };
 
@@ -104,6 +105,7 @@ can_exec(exim_t, exim_exec_t)
 
 kernel_read_crypto_sysctls(exim_t)
 kernel_read_kernel_sysctls(exim_t)
+kernel_read_net_sysctls(exim_t)
 kernel_read_network_state(exim_t)
 kernel_read_system_state(exim_t)
 

@@ -26,7 +26,7 @@ gen_tunable(fips_mode, true)
 ## </p>
 ## </desc>
 #
-gen_tunable(domain_kernel_load_modules, false)
+gen_tunable(domain_kernel_load_modules, true)
 
 ## <desc>
 ## <p>
@@ -121,7 +121,6 @@ neverallow ~{ domain unlabeled_t } *:process *;
 # Rules applied to all domains
 #
 
-allow domain self:anon_inode common_anon_inode_perms;
 # read /proc/(pid|self) entries
 allow domain self:dir { list_dir_perms watch_dir_perms };
 allow domain self:lnk_file { read_lnk_file_perms lock ioctl };
@@ -130,10 +129,10 @@ allow domain self:fifo_file rw_fifo_file_perms;
 allow domain self:sem create_sem_perms;
 allow domain self:shm create_shm_perms;
 
-# This is a temporary rule to work around a problem in kernel/xfs
-# triggering a false fowner capability AVC
-# https://bugzilla.redhat.com/show_bug.cgi?id=1933437
-dontaudit domain self:capability fowner;
+kernel_userfaultfd_domtrans(domain)
+kernel_io_uring_domtrans(domain)
+kernel_secretmem_domtrans(domain)
+kernel_kvm_gmem_domtrans(domain)
 
 kernel_getattr_proc(domain)
 kernel_read_proc_symlinks(domain)
@@ -165,6 +164,9 @@ dev_getattr_sysfs_fs(domain)
 # Allow all domains to read /dev/urandom. It is needed by all apps/services
 # linked to libgcrypt. There is no harm to allow it by default.
 dev_read_urand(domain)
+# The access to /dev/z90crypto is a feature of openssl 3.2, so any domain
+# using some of openssl libraries needs it
+dev_rw_crypto(domain)
 
 # list the root directory
 files_list_root(domain)
@@ -177,6 +179,13 @@ files_append_inherited_tmp_files(domain)
 files_mmap_usr_files(domain)
 files_read_all_base_ro_files(domain)
 files_dontaudit_getattr_kernel_symbol_table(domain)
+files_dontaudit_map_all_dirs(domain)
+# Executing a socket is nonsense, yet such access checks can technically
+# happen, so dontaudit them
+files_dontaudit_execute_all_sockets(domain)
+
+fs_dontaudit_map_all_dirs(domain)
+fs_dontaudit_write_cgroup_files(domain)
 
 # All executables should be able to search the directory they are in
 corecmd_search_bin(domain)
@@ -236,6 +245,10 @@ optional_policy(`
 	setrans_translate_context(domain)
 ')
 
+optional_policy(`
+	systemd_nsresourced_stream_connect(domain)
+')
+
 # xdm passes an open file descriptor to xsession-errors.log which is then audited by all confined domains.
 optional_policy(`
 	xserver_dontaudit_use_xdm_fds(domain)
@@ -255,8 +268,13 @@ optional_policy(`
 # be used on an attribute.
 
 # allow special io_uring features
-allow unconfined_domain_type domain:io_uring override_creds;
+allow unconfined_domain_type domain:io_uring { cmd override_creds };
 allow unconfined_domain_type self:io_uring sqpoll;
+dev_io_uring_cmd_on_all_dev_nodes(unconfined_domain_type)
+files_io_uring_cmd_on_all_files(unconfined_domain_type)
+
+# allow using the user_namespace class
+allow unconfined_domain_type self:user_namespace create;
 
 # Use bpf tools
 allow unconfined_domain_type domain:bpf { map_create map_read map_write prog_load prog_run };
@@ -295,6 +313,10 @@ allow unconfined_domain_type domain:key *;
 allow unconfined_domain_type domain:perf_event rw_inherited_perf_event_perms;
 
 kernel_manage_perf_event(unconfined_domain_type)
+kernel_userfaultfd_use(unconfined_domain_type)
+kernel_io_uring_use(unconfined_domain_type)
+kernel_secretmem_use(unconfined_domain_type)
+kernel_kvm_gmem_use(unconfined_domain_type)
 
 corenet_filetrans_all_named_dev(named_filetrans_domain)
 
@@ -589,6 +611,12 @@ optional_policy(`
 	abrt_signull(domain)
 	abrt_append_cache(domain)
 	abrt_rw_fifo_file(domain)
+')
+
+optional_policy(`
+	# This is needed purely for rpm-ostree (after --apply-live).
+	# It should be removed when/if it gets its own policy.
+	anaconda_fd_use(domain)
 ')
 
 optional_policy(`

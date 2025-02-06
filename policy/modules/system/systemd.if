@@ -29,6 +29,38 @@ template(`systemd_domain_template',`
 
 ######################################
 ## <summary>
+##	Creates types and rules for systemd generators
+## </summary>
+## <param name="prefix">
+##	<summary>
+##	Prefix for the domain.
+##	</summary>
+## </param>
+#
+template(`systemd_generator_template',`
+	gen_require(`
+		attribute systemd_generator;
+	')
+
+	type $1_t, systemd_generator;
+	type $1_exec_t;
+	init_daemon_domain($1_t, $1_exec_t)
+	init_nnp_daemon_domain($1_t)
+	type $1_unit_file_t;
+	systemd_unit_file($1_unit_file_t)
+
+	allow $1_t $1_unit_file_t:dir manage_dir_perms;
+	allow $1_t $1_unit_file_t:file manage_file_perms;
+	allow $1_t $1_unit_file_t:lnk_file manage_lnk_file_perms;
+	systemd_unit_file_filetrans($1_t, $1_unit_file_t, file)
+
+	optional_policy(`
+		logging_send_syslog_msg($1_t)
+	')
+')
+
+######################################
+## <summary>
 ##      Create a domain for processes which are started 
 ##      exuting systemctl.
 ## </summary>
@@ -44,6 +76,31 @@ interface(`systemd_stub_unit_file',`
         ')
 ')
 
+########################################
+## <summary>
+##      Common permissions for domains executing systemctl. (INTERNAL)
+## </summary>
+## <param name="domain">
+##      <summary>
+##      Domain allowed access.
+##      </summary>
+## </param>
+#
+interface(`systemd_systemctl_common',`
+	fs_list_cgroup_dirs($1)
+	fs_read_cgroup_files($1)
+	fs_read_efivarfs_files($1)
+	systemd_list_unit_dirs($1)
+	init_list_pid_dirs($1)
+	init_read_state($1)
+	init_stream_send($1)
+	init_stream_connect($1)
+
+	# systemctl tries to adjust its RLIMIT_NOFILE right when it is started
+	dontaudit $1 self:process setrlimit;
+	dontaudit $1 self:capability sys_resource;
+')
+
 #######################################
 ## <summary>
 ##      Create a domain for processes which are started 
@@ -55,7 +112,7 @@ interface(`systemd_stub_unit_file',`
 ##      </summary>
 ## </param>
 #
-interface(`systemd_systemctl_domain',`
+template(`systemd_systemctl_domain',`
         gen_require(`
                 type systemd_systemctl_exec_t;
                 role system_r;
@@ -69,6 +126,8 @@ interface(`systemd_systemctl_domain',`
 	role system_r types $1_systemctl_t;
 
 	domtrans_pattern($1_t, systemd_systemctl_exec_t , $1_systemctl_t)
+
+	systemd_systemctl_common($1_systemctl_t)
 ')
 
 ########################################
@@ -89,22 +148,13 @@ interface(`systemd_exec_systemctl',`
 	corecmd_search_bin($1)
 	can_exec($1, systemd_systemctl_exec_t)
 
-	fs_list_cgroup_dirs($1)
-	fs_read_cgroup_files($1)
-    fs_read_efivarfs_files($1)
-	systemd_list_unit_dirs($1)
-	init_list_pid_dirs($1)
-	init_read_state($1)
-	init_stream_send($1)
-	init_stream_connect($1)
+	systemd_systemctl_common($1)
 
 	systemd_login_list_pid_dirs($1)
 	systemd_login_read_pid_files($1)
 	systemd_passwd_agent_exec($1)
 
 	dontaudit $1 self:capability { net_admin sys_ptrace };
-	# systemctl tries to adjust its RLIMIT_NOFILE right when it is started
-	dontaudit $1 self:process setrlimit;
 ')
 #
 ########################################
@@ -170,6 +220,25 @@ interface(`systemd_unit_file',`
 
 ######################################
 ## <summary>
+##      Allow domain to search systemd cache dirs.
+## </summary>
+## <param name="domain">
+##      <summary>
+##      Domain allowed access.
+##      </summary>
+## </param>
+#
+interface(`systemd_search_cache_dirs',`
+        gen_require(`
+                type systemd_cache_t;
+        ')
+
+	files_search_var($1)
+	allow $1 systemd_cache_t:dir search_dir_perms;
+')
+
+######################################
+## <summary>
 ##      Allow domain to search systemd unit dirs.
 ## </summary>
 ## <param name="domain">
@@ -182,7 +251,7 @@ interface(`systemd_search_unit_dirs',`
         gen_require(`
                 attribute systemd_unit_file_type;
         ')
-	
+
 	files_search_var_lib($1)
 	allow $1 systemd_unit_file_type:dir search_dir_perms;
 ')
@@ -742,7 +811,7 @@ interface(`systemd_exec_sysctl',`
 
 #######################################
 ## <summary>
-##  Allow a domain to execute systemd-sysctl in the caller domain.
+##  Allow a domain to execute systemd-tmpfiles in the caller domain.
 ## </summary>
 ## <param name="domain">
 ## <summary>
@@ -994,6 +1063,24 @@ interface(`systemd_timedated_manage_lib_dirs',`
 
 	manage_dirs_pattern($1, systemd_timedated_var_lib_t, systemd_timedated_var_lib_t)
 	read_lnk_files_pattern($1, systemd_timedated_var_lib_t, systemd_timedated_var_lib_t)
+')
+
+########################################
+## <summary>
+##	Execute systemd-notify in the caller domain
+## </summary>
+## <param name="domain">
+## <summary>
+##	Domain allowed access.
+## </summary>
+## </param>
+#
+interface(`systemd_exec_notify',`
+	gen_require(`
+		type systemd_notify_exec_t;
+	')
+
+	can_exec($1, systemd_notify_exec_t)
 ')
 
 ########################################
@@ -1328,7 +1415,7 @@ interface(`systemd_manage_unit_symlinks',`
 		attribute systemd_unit_file_type;
 	')
 
-	manage_lnk_files_pattern($1, systemd_unit_file_type, systemd_unit_file_type)
+	manage_lnk_files_pattern($1, systemd_unit_file_t, systemd_unit_file_t)
 ')
 
 ########################################
@@ -1440,6 +1527,42 @@ interface(`systemd_start_systemd_services',`
 	')
 
 	allow $1 systemd_unit_file_t:service start;
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to stop systemd services.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`systemd_stop_systemd_services',`
+	gen_require(`
+		type systemd_unit_file_t;
+	')
+
+	allow $1 systemd_unit_file_t:service stop;
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to status systemd services.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`systemd_status_systemd_services',`
+	gen_require(`
+		type systemd_unit_file_t;
+	')
+
+	allow $1 systemd_unit_file_t:service status;
 ')
 
 #######################################
@@ -1615,6 +1738,42 @@ interface(`systemd_getattr_generic_unit_files',`
 
 #######################################
 ## <summary>
+##	Read generic systemd unit lnk files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`systemd_read_generic_unit_lnk_files',`
+	gen_require(`
+		type systemd_unit_file_t;
+	')
+
+	read_lnk_files_pattern($1, systemd_unit_file_t, systemd_unit_file_t)
+')
+
+#######################################
+## <summary>
+##	Create a file in the /usr/lib/systemd/system directory.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`systemd_create_unit_file',`
+	gen_require(`
+		type systemd_unit_file_t;
+	')
+
+	create_files_pattern($1, systemd_unit_file_t, systemd_unit_file_t)
+')
+
+#######################################
+## <summary>
 ##  Create a directory in the /usr/lib/systemd/system directory.
 ## </summary>
 ## <param name="domain">
@@ -1647,6 +1806,24 @@ interface(`systemd_create_unit_file_lnk',`
     ')
 
     create_lnk_files_pattern($1, systemd_unit_file_t, systemd_unit_file_t)
+')
+
+#######################################
+## <summary>
+##	Write to a file in the /usr/lib/systemd/system directory.
+## </summary>
+## <param name="domain">
+##  <summary>
+##  Domain allowed access.
+##  </summary>
+## </param>
+#
+interface(`systemd_write_unit_file',`
+	gen_require(`
+		type systemd_unit_file_t;
+	')
+
+	write_files_pattern($1, systemd_unit_file_t, systemd_unit_file_t)
 ')
 
 ########################################
@@ -1948,6 +2125,44 @@ interface(`systemd_status_power_services',`
 
 	systemd_exec_systemctl($1)
 	allow $1 power_unit_file_t:service status;
+')
+
+########################################
+## <summary>
+##	Start vconsole unit.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`systemd_start_vconsole_services',`
+	gen_require(`
+		type systemd_vconsole_unit_file_t;
+	')
+
+	systemd_exec_systemctl($1)
+	allow $1 systemd_vconsole_unit_file_t:service start;
+')
+
+########################################
+## <summary>
+##	Status vconsole unit.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`systemd_status_vconsole_services',`
+	gen_require(`
+		type systemd_vconsole_unit_file_t;
+	')
+
+	systemd_exec_systemctl($1)
+	allow $1 systemd_vconsole_unit_file_t:service status;
 ')
 
 #######################################
@@ -2656,6 +2871,25 @@ interface(`systemd_userdbd_runtime_filetrans',`
 
 #######################################
 ## <summary>
+##	Read systemd-userdbd data symlinks.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`systemd_userdbd_runtime_read_symlinks',`
+	gen_require(`
+		type systemd_userdbd_runtime_t;
+	')
+
+	list_dirs_pattern($1, systemd_userdbd_runtime_t, systemd_userdbd_runtime_t)
+	read_lnk_files_pattern($1, systemd_userdbd_runtime_t, systemd_userdbd_runtime_t)
+')
+
+#######################################
+## <summary>
 ##	Manage systemd-userdbd data symlinks.
 ## </summary>
 ## <param name="domain">
@@ -2712,4 +2946,172 @@ interface(`systemd_manage_userdbd_runtime_sock_files',`
 	')
 
 	manage_sock_files_pattern($1, systemd_userdbd_runtime_t, systemd_userdbd_runtime_t)
+')
+
+#######################################
+## <summary>
+##	Allows connections to the systemd-socket-proxyd's socket.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`systemd_connectto_socket_proxyd_unix_sockets', `
+	gen_require(`
+		type systemd_socket_proxyd_t;
+	')
+
+	allow $1 systemd_socket_proxyd_t:unix_stream_socket connectto;
+')
+
+#######################################
+## <summary>
+##	List systemd config directories.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`systemd_list_conf_dirs', `
+	gen_require(`
+		type systemd_conf_t;
+	')
+
+	files_search_etc($1)
+	list_dirs_pattern($1, systemd_conf_t, systemd_conf_t)
+')
+
+#######################################
+## <summary>
+##	Read systemd config files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`systemd_read_conf_files', `
+	gen_require(`
+		type systemd_conf_t;
+	')
+
+	files_search_etc($1)
+	read_files_pattern($1, systemd_conf_t, systemd_conf_t)
+')
+
+#######################################
+## <summary>
+##	Manage systemd config files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`systemd_manage_conf_files', `
+	gen_require(`
+		type systemd_conf_t;
+	')
+
+	files_search_etc($1)
+	manage_files_pattern($1, systemd_conf_t, systemd_conf_t)
+')
+
+#######################################
+## <summary>
+##	Allow the specified domain to connect to
+##	systemd-nsresourced over a unix socket.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`systemd_nsresourced_stream_connect', `
+	gen_require(`
+		type systemd_nsresourced_t;
+		type systemd_nsresourced_runtime_t;
+	')
+
+	allow $1 systemd_nsresourced_t:unix_stream_socket connectto;
+	allow $1 systemd_nsresourced_runtime_t:sock_file write_sock_file_perms;
+')
+
+#######################################
+## <summary>
+##	Create objects in the pid directory
+##	with a private type with a type transition.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`systemd_nsresourced_runtime_filetrans',`
+	gen_require(`
+		type init_var_run_t;
+		type systemd_nsresourced_runtime_t;
+	')
+
+	filetrans_pattern($1, init_var_run_t, systemd_nsresourced_runtime_t, file, "io.systemd.NamespaceResource")
+')
+
+########################################
+## <summary>
+##	Allow caller domain to run bpf on systemd-nsresourced.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`systemd_nsresourced_prog_run_bpf',`
+	gen_require(`
+		type systemd_nsresourced_t;
+	')
+
+    allow $1 systemd_nsresourced_t:bpf { map_read map_write prog_run };
+')
+
+########################################
+## <summary>
+##	Create objects in /var/cache/systemd
+##	with a private type using a type_transition.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+## <param name="file_type">
+##	<summary>
+##	Private file type.
+##	</summary>
+## </param>
+## <param name="class">
+##	<summary>
+##	Object classes to be created.
+##	</summary>
+## </param>
+## <param name="name" optional="true">
+##	<summary>
+##	The name of the object being created.
+##	</summary>
+## </param>
+#
+interface(`systemd_cache_filetrans',`
+	gen_require(`
+		type systemd_cache_t;
+	')
+
+	filetrans_pattern($1, systemd_cache_t, $2, $3, $4)
 ')

@@ -54,10 +54,12 @@ kernel_request_load_module(blueman_t)
 
 corecmd_exec_bin(blueman_t)
 
+dev_read_sysfs(blueman_t)
 dev_read_rand(blueman_t)
 dev_read_urand(blueman_t)
 dev_rw_wireless(blueman_t)
 dev_rwx_zero(blueman_t)
+dev_watch_generic_dirs(blueman_t)
 
 domain_use_interactive_fds(blueman_t)
 domain_dontaudit_ptrace_all_domains(blueman_t)
@@ -93,11 +95,15 @@ optional_policy(`
 ')
 
 optional_policy(`
-	gnome_search_gconf(blueman_t)
+	gnome_search_gconf_data_dir(blueman_t)
 ')
 
 optional_policy(`
 	iptables_domtrans(blueman_t)
+')
+
+optional_policy(`
+	userdom_signal_unpriv_users(blueman_t)
 ')
 
 optional_policy(`

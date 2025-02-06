@@ -149,6 +149,7 @@ define(`relabel_dir_perms',`{ getattr relabelfrom relabelto }')
 define(`watch_dir_perms',`{ getattr watch }')
 define(`watch_mount_dir_perms',`{ getattr watch_mount }')
 define(`watch_reads_dir_perms',`{ getattr watch_reads }')
+define(`watch_sb_dir_perms',`{ getattr watch_sb }')
 define(`watch_with_perm_dir_perms',`{ getattr watch_with_perm }')
 
 #
@@ -170,8 +171,8 @@ define(`write_inherited_file_perms',`{ getattr write append lock ioctl }')
 define(`write_file_perms',`{ open write_inherited_file_perms }')
 define(`rw_inherited_file_perms',`{ getattr read write append ioctl lock }')
 define(`rw_file_perms',`{ open rw_inherited_file_perms }')
-define(`mmap_rw_inherited_file_perms',`{ getattr map read write ioctl }')
-define(`mmap_rw_file_perms',`{ getattr open map read write ioctl }')
+define(`mmap_rw_inherited_file_perms',`{ map rw_inherited_file_perms }')
+define(`mmap_rw_file_perms',`{ map rw_file_perms }')
 define(`create_file_perms',`{ getattr create open }')
 define(`rename_file_perms',`{ getattr rename }')
 define(`delete_file_perms',`{ getattr unlink }')
@@ -205,7 +206,8 @@ define(`watch_lnk_file_perms',`{ getattr watch }')
 #
 define(`getattr_fifo_file_perms',`{ getattr }')
 define(`setattr_fifo_file_perms',`{ setattr }')
-define(`read_fifo_file_perms',`{ getattr open read lock ioctl }')
+define(`read_inherited_fifo_file_perms',`{ getattr read ioctl lock }')
+define(`read_fifo_file_perms',`{ open read_inherited_fifo_file_perms }')
 define(`append_fifo_file_perms',`{ getattr open append lock ioctl }')
 define(`write_fifo_file_perms',`{ getattr open write append lock ioctl }')
 define(`rw_inherited_fifo_file_perms',`{ getattr read write append ioctl lock }')
@@ -282,10 +284,14 @@ define(`watch_reads_chr_file_perms',`{ getattr watch_reads }')
 #
 define(`userfaultfd_anon_inode_perms',`
 	# deprecated 2022.02.07
-	refpolicywarn(`userfaultfd_anon_inode_perms() is deprecated, please use common_inode_perms() instead.')
+	refpolicywarn(`userfaultfd_anon_inode_perms() is deprecated, enumerate the needed permissions instead.')
 	{ create getattr ioctl read write }
 ')
-define(`common_anon_inode_perms',`{ create getattr ioctl map read write }')
+define(`common_anon_inode_perms',`
+	# deprecated 2023.10.04
+	refpolicywarn(`common_anon_inode_perms() is deprecated, enumerate the needed permissions instead.')
+	{ create getattr ioctl map read write }
+')
 
 ########################################
 #

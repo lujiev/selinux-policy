@@ -56,7 +56,7 @@ gen_tunable(init_create_dirs, true)
 ## Allow init audit_control capability
 ## </p>
 ## </desc>
-gen_tunable(init_audit_control, false)
+gen_tunable(init_audit_control, true)
 
 # used for direct running of init scripts
 # by admin domains
@@ -175,8 +175,10 @@ ifdef(`enable_mls',`
 allow init_t self:capability ~{ audit_control audit_write sys_module };
 allow init_t self:capability2 ~{ mac_admin mac_override };
 allow init_t self:cap_userns all_cap_userns_perms;
+allow init_t self:netlink_netfilter_socket create_socket_perms;
 allow init_t self:tcp_socket { listen accept };
 allow init_t self:packet_socket create_socket_perms;
+allow init_t self:vsock_socket create_socket_perms;
 allow init_t self:key manage_key_perms;
 allow init_t self:bpf { map_create map_read map_write prog_load prog_run };
 
@@ -187,9 +189,11 @@ allow init_t self:bpf { map_create map_read map_write prog_load prog_run };
 # setuid (from /sbin/shutdown)
 # sys_chroot (from /usr/bin/chroot): now provided by corecmd_chroot_exec_chroot()
 
+allow init_t self:file mounton;
 allow init_t self:fifo_file rw_fifo_file_perms;
 
 allow init_t self:service manage_service_perms;
+allow init_t self:user_namespace create;
 
 # Re-exec itself
 can_exec(init_t, init_exec_t)
@@ -208,6 +212,7 @@ manage_dirs_pattern(init_t, init_tmp_t, init_tmp_t)
 manage_lnk_files_pattern(init_t, init_tmp_t, init_tmp_t)
 manage_sock_files_pattern(init_t, init_tmp_t, init_tmp_t)
 files_tmp_filetrans(init_t, init_tmp_t, { file sock_file })
+allow init_t init_tmp_t:file map;
 
 manage_dirs_pattern(init_t, init_var_lib_t, init_var_lib_t)
 manage_files_pattern(init_t, init_var_lib_t, init_var_lib_t)
@@ -325,13 +330,14 @@ files_mounton_etc(init_t)
 files_create_default_dir(init_t)
 files_remount_rootfs(init_t)
 files_create_var_dirs(init_t)
+files_read_non_security_sock_files(init_t)
+files_var_filetrans(init_t, var_lib_t, dir, "lib")
 files_watch_non_security_dirs(init_t)
 files_watch_non_security_files(init_t)
 files_watch_non_security_lnk_files(init_t)
 
-# cjp: this may be related to /dev/log
-fs_write_ramfs_sockets(init_t)
-
+fs_cgroup_filetrans_memory_pressure(init_t)
+fs_mounton_cgroup(init_t)
 fs_read_efivarfs_files(init_t)
 fs_setattr_efivarfs_files(init_t)
 fs_read_nfsd_files(init_t)
@@ -396,6 +402,7 @@ logging_manage_audit_config(init_t)
 logging_create_syslog_netlink_audit_socket(init_t)
 logging_write_var_log_dirs(init_t)
 logging_manage_var_log_symlinks(init_t)
+logging_fd_use(init_t)
 
 seutil_read_config(init_t)
 seutil_read_login_config(init_t)
@@ -413,7 +420,7 @@ userdom_manage_tmp_sockets(init_t)
 userdom_delete_user_tmp_files(init_t)
 userdom_delete_user_home_content_files(init_t)
 userdom_connectto_stream(init_t)
-
+userdom_rw_inherited_user_pipes(init_t)
 userdom_transition_login_userdomain(init_t)
 userdom_nnp_transition_login_userdomain(init_t)
 userdom_noatsecure_login_userdomain(init_t)
@@ -526,6 +533,7 @@ optional_policy(`
 optional_policy(`
 	rpm_read_db(init_t)
 	rpm_script_ioctl_stream_sockets(init_t)
+	rpm_script_rw_stream_sockets(init_t)
 ')
 
 optional_policy(`
@@ -543,8 +551,14 @@ optional_policy(`
 optional_policy(`
 	postfix_exec(init_t)
 	postfix_list_spool(init_t)
+	mta_getattr_spool(init_t)
 	mta_read_config(init_t)
 	mta_manage_aliases(init_t)
+')
+
+optional_policy(`
+	pkcs_delete_tmpfs_files(init_t)
+	pkcs_destroy_shm(init_t)
 ')
 
 optional_policy(`
@@ -557,6 +571,7 @@ optional_policy(`
     systemd_allow_mount_dir(init_t)
     systemd_allow_create_mount_dir(init_t)
     systemd_hostnamed_delete_config(init_t)
+	systemd_manage_conf_files(init_t)
 ')
 
 optional_policy(`
@@ -626,6 +641,7 @@ dev_rw_wireless(init_t)
 files_search_all(init_t)
 files_mounton_all_mountpoints(init_t)
 files_unmount_all_file_type_fs(init_t)
+files_remount_all_file_type_fs(init_t)
 files_mounton_kernel_symbol_table(init_t)
 files_manage_all_pid_dirs(init_t)
 files_write_all_pid_sockets(init_t)
@@ -712,7 +728,7 @@ systemd_relabel_unit_dirs(init_t)
 systemd_relabel_unit_files(init_t)
 systemd_relabel_unit_symlinks(init_t)
 systemd_manage_unit_dirs(initrc_t)
-systemd_manage_unit_symlinks(initrc_t)
+systemd_manage_all_unit_lnk_files(initrc_t)
 systemd_config_all_services(initrc_t)
 systemd_read_unit_files(initrc_t)
 systemd_login_status(init_t)
@@ -727,6 +743,7 @@ systemd_timedated_manage_lib_dirs(init_t)
 systemd_login_mounton_pid_dirs(init_t)
 systemd_mounton_inherited_logind_sessions_dirs(init_t)
 systemd_delete_private_tmp(init_t)
+systemd_nsresourced_runtime_filetrans(init_t)
 systemd_userdbd_stream_connect(init_t)
 systemd_userdbd_runtime_filetrans(init_t)
 systemd_userdbd_runtime_manage_symlinks(init_t)
@@ -793,10 +810,12 @@ optional_policy(`
     dbus_manage_session_tmp_dirs(init_t)
 	dbus_read_pid_sock_files(init_t)
 	dbus_watch_pid_sock_files(init_t)
+	dbus_use_system_bus_fds(init_t)
 
 	optional_policy(`
 		devicekit_dbus_chat_power(init_t)
 	')
+
 ')
 
 optional_policy(`
@@ -818,6 +837,10 @@ optional_policy(`
 ')
 
 optional_policy(`
+	insights_client_rw_pipes(init_t)
+')
+
+optional_policy(`
 	mount_manage_pid_files(init_t)
 	mount_watch_reads_pid_dirs(init_t)
 	mount_watch_reads_pid_files(init_t)
@@ -836,6 +859,10 @@ optional_policy(`
 
 optional_policy(`
 	ssh_getattr_server_keys(init_t)
+	ssh_create_vsock_socket(init_t)
+	# needed after systemd commit 76f2191d8eb5 ("logind:
+	# introduce CreateSessionWithPIDFD()")
+	ssh_fd_use(init_t)
 ')
 
 optional_policy(`
@@ -852,12 +879,19 @@ optional_policy(`
 ')
 
 optional_policy(`
+	systemd_homed_cache_filetrans(init_t)
+	systemd_homed_dbus_chat(init_t)
+	systemd_homed_write_pipes(init_t)
+')
+	
+optional_policy(`
 	systemd_filetrans_named_content(init_t)
     systemd_write_inhibit_pipes(init_t)
 ')
 
 optional_policy(`
     sysnet_filetrans_cloud_net_conf(init_t)
+    sysnet_manage_config_pipes(init_t)
 ')
 
 optional_policy(`
@@ -880,6 +914,7 @@ optional_policy(`
 optional_policy(`
 	domain_named_filetrans(init_t)
 	unconfined_server_domtrans(init_t)
+	unconfined_server_siginh(init_t)
     unconfined_server_noatsecure(init_t)
     unconfined_server_create_tcp_sockets(init_t)
     unconfined_server_create_udp_sockets(init_t)
@@ -1064,8 +1099,6 @@ fs_delete_cgroup_dirs(initrc_t)
 fs_list_cgroup_dirs(initrc_t)
 fs_rw_cgroup_files(initrc_t)
 fs_register_binary_executable_type(initrc_t)
-# rhgb-console writes to ramfs
-fs_write_ramfs_pipes(initrc_t)
 # cjp: not sure why these are here; should use mount policy
 fs_mount_all_fs(initrc_t)
 fs_unmount_all_fs(initrc_t)
@@ -1316,6 +1349,10 @@ ifdef(`distro_redhat',`
 	')
 
 	optional_policy(`
+		usermanage_run_passwd(initrc_t, system_r)
+	')
+
+	optional_policy(`
 		wdmd_manage_pid_files(initrc_t)
 	')
 
@@ -1333,6 +1370,8 @@ ifdef(`distro_suse',`
 ')
 
 domain_dontaudit_use_interactive_fds(daemon)
+
+init_use_notify(daemon)
 
 userdom_dontaudit_list_admin_dir(daemon)
 userdom_dontaudit_search_user_tmp(daemon)
@@ -1614,9 +1653,6 @@ optional_policy(`
 ')
 
 optional_policy(`
-	fs_write_ramfs_sockets(initrc_t)
-	fs_search_ramfs(initrc_t)
-
 	rhgb_rw_stream_sockets(initrc_t)
 	rhgb_stream_connect(initrc_t)
 ')
@@ -1952,6 +1988,7 @@ allow initrc_domain systemprocess:process transition;
 optional_policy(`
 	systemd_getattr_unit_dirs(daemon)
 	systemd_getattr_unit_dirs(systemprocess)
+	systemd_exec_notify(daemon)
 ')
 
 optional_policy(`

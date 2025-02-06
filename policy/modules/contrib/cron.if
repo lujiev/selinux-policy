@@ -131,6 +131,7 @@ interface(`cron_role',`
 		dbus_stub(cronjob_t)
 
 		allow cronjob_t $2_t:dbus send_msg;
+		allow $2_t cronjob_t:dbus send_msg;
 	')		
 ')
 
@@ -213,6 +214,7 @@ interface(`cron_unconfined_role',`
 
 		dbus_stub(unconfined_cronjob_t)
 		allow unconfined_cronjob_t $2_t:dbus send_msg;
+		allow $2_t unconfined_cronjob_t:dbus send_msg;
 	')
 ')
 
@@ -307,6 +309,7 @@ interface(`cron_admin_role',`
 		dbus_stub(admin_cronjob_t)
 
 		allow cronjob_t $2_t:dbus send_msg;
+		allow $2_t cronjob_t:dbus send_msg;
 	')		
 ')
 
@@ -775,6 +778,24 @@ interface(`cron_anacron_domtrans_system_job',`
 
 ########################################
 ## <summary>
+##	Send a null signal to cron system job.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`cron_signull_system_job',`
+	gen_require(`
+		type system_cronjob_t;
+	')
+
+	allow $1 system_cronjob_t:process signull;
+')
+
+########################################
+## <summary>
 ##	Inherit and use a file descriptor
 ##	from system cron jobs.
 ## </summary>
@@ -1060,4 +1081,40 @@ interface(`cron_system_spool_entrypoint',`
 		attribute system_cron_spool_t;
 	')
 	allow $1 system_cron_spool_t:file entrypoint;
+')
+
+########################################
+## <summary>
+##	Execute crontab in the crontab domain.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed to transition.
+##	</summary>
+## </param>
+#
+interface(`crontab_domtrans',`
+	gen_require(`
+		type crontab_exec_t, crontab_t;
+	')
+
+	domtrans_pattern($1, crontab_exec_t, crontab_t)
+')
+
+########################################
+## <summary>
+##	Execute crontab in the admin crontab domain.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed to transition.
+##	</summary>
+## </param>
+#
+interface(`crontab_admin_domtrans',`
+	gen_require(`
+		type crontab_exec_t, admin_crontab_t;
+	')
+
+	domtrans_pattern($1, crontab_exec_t, admin_crontab_t)
 ')

@@ -30,8 +30,6 @@ interface(`unconfined_domain_noaudit',`
 	allow $1 self:file manage_file_perms;
 	allow $1 self:dir rw_dir_perms;
 
-	allow $1 self:lockdown { confidentiality integrity };
-
 	# Userland object managers
 	allow $1 self:nscd all_nscd_perms;
 	allow $1 self:dbus all_dbus_perms;
@@ -286,6 +284,24 @@ interface(`unconfined_server_signull',`
 
 ########################################
 ## <summary>
+##	Allow inherit signal state
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`unconfined_server_siginh',`
+	gen_require(`
+		type unconfined_service_t;
+	')
+
+	allow $1 unconfined_service_t:process siginh;
+')
+
+########################################
+## <summary>
 ##	Allow noatsecure.
 ## </summary>
 ## <param name="domain">
@@ -374,4 +390,58 @@ interface(`unconfined_server_dontaudit_rw_pipes',`
 	')
 
 	dontaudit $1 unconfined_service_t:fifo_file rw_file_perms;
+')
+
+########################################
+## <summary>
+##	Create and use unconfined service shared memory
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain to not audit.
+##	</summary>
+## </param>
+#
+interface(`unconfined_server_create_shm',`
+	gen_require(`
+		type unconfined_service_t;
+	')
+
+	allow $1 unconfined_service_t:shm create_shm_perms;
+')
+
+#######################################
+## <summary>
+##	Allow the specified domain read unconfined service semaphores
+## </summary>
+##	<param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`unconfined_server_read_semaphores',`
+	gen_require(`
+		type unconfined_service_t;
+	')
+
+	allow $1 unconfined_service_t:sem r_sem_perms;
+')
+
+#######################################
+## <summary>
+##	Allow the specified domain read unconfined service process state
+## </summary>
+##	<param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`unconfined_server_read_state',`
+	gen_require(`
+		type unconfined_service_t;
+	')
+
+	ps_process_pattern($1, unconfined_service_t)
 ')

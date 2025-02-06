@@ -10,6 +10,7 @@ attribute policykit_domain;
 type policykit_t, policykit_domain;
 type policykit_exec_t;
 init_daemon_domain(policykit_t, policykit_exec_t)
+init_nnp_daemon_domain(policykit_t)
 
 type policykit_auth_t, policykit_domain;
 type policykit_auth_exec_t;
@@ -59,6 +60,7 @@ policykit_domtrans_auth(policykit_t)
 allow policykit_t policykit_auth_exec_t:file map;
 
 allow policykit_t policykit_auth_t:process signal;
+allow policykit_t policykit_auth_t:process2 nnp_transition;
 
 can_exec(policykit_t, policykit_exec_t)
 corecmd_exec_bin(policykit_t)
@@ -124,6 +126,14 @@ optional_policy(`
 	')
 
 	optional_policy(`
+		systemd_homed_dbus_chat(policykit_t)
+	')
+	
+	optional_policy(`
+		rhsmcertd_dbus_chat(policykit_t)
+	')
+
+	optional_policy(`
 		rpm_dbus_chat(policykit_t)
 	')
 ')
@@ -146,6 +156,7 @@ optional_policy(`
 	systemd_read_logind_sessions_files(policykit_t)
 	systemd_login_list_pid_dirs(policykit_t)
 	systemd_login_read_pid_files(policykit_t)
+	systemd_status_all_unit_files(policykit_t)
 ')
 
 ########################################

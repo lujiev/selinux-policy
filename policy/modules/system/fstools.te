@@ -37,6 +37,7 @@ dontaudit fsadm_t self:capability net_admin;
 allow fsadm_t self:process ~{ ptrace setcurrent setexec setfscreate setrlimit execmem execmem execheap execstack };
 allow fsadm_t self:fd use;
 allow fsadm_t self:fifo_file rw_fifo_file_perms;
+allow fsadm_t self:file mounton;
 allow fsadm_t self:sock_file read_sock_file_perms;
 allow fsadm_t self:unix_dgram_socket create_socket_perms;
 allow fsadm_t self:unix_stream_socket create_stream_socket_perms;
@@ -132,7 +133,6 @@ files_read_isid_type_files(fsadm_t)
 
 fs_search_auto_mountpoints(fsadm_t)
 fs_getattr_xattr_fs(fsadm_t)
-fs_rw_ramfs_pipes(fsadm_t)
 # remount file system to apply changes
 fs_remount_xattr_fs(fsadm_t)
 # for /dev/shm
@@ -143,6 +143,7 @@ fs_read_tmpfs_symlinks(fsadm_t)
 fs_manage_nfs_files(fsadm_t)
 fs_manage_cifs_files(fsadm_t)
 fs_rw_hugetlbfs_files(fsadm_t)
+fs_getattr_cgroup(fsadm_t)
 # Recreate /mnt/cdrom.
 files_manage_mnt_dirs(fsadm_t)
 # for tune2fs
@@ -222,7 +223,6 @@ optional_policy(`
 ')
 
 optional_policy(`
-	fs_dontaudit_write_ramfs_pipes(fsadm_t)
 	rhgb_stub(fsadm_t)
 ')
 

@@ -44,6 +44,7 @@ allow snapperd_t snapperd_data_t:file relabelfrom;
 snapper_filetrans_named_content(snapperd_t)
 
 kernel_setsched(snapperd_t)
+kernel_stream_connect(snapperd_t)
 
 domain_read_all_domains_state(snapperd_t)
 
@@ -92,4 +93,8 @@ optional_policy(`
 
 optional_policy(`
     snapper_relabel_snapshots(snapperd_t)
+')
+
+optional_policy(`
+	systemd_exec_systemctl(snapperd_t)
 ')

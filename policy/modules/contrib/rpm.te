@@ -75,7 +75,7 @@ files_tmpfs_file(rpm_script_tmpfs_t)
 #
 
 allow rpm_t self:capability2 block_suspend;
-allow rpm_t self:capability { audit_write chown dac_read_search dac_override fowner setfcap fsetid ipc_lock setgid setuid sys_chroot sys_nice sys_tty_config mknod };
+allow rpm_t self:capability { audit_write chown dac_read_search dac_override fowner setfcap fsetid ipc_lock setgid setuid sys_admin sys_chroot sys_nice sys_tty_config mknod };
 allow rpm_t self:process ~{ ptrace setcurrent setexec setfscreate setrlimit execstack execheap };
 allow rpm_t self:process { getattr setexec setfscreate setrlimit };
 allow rpm_t self:fd use;
@@ -260,28 +260,40 @@ optional_policy(`
 # rpmdb local policy
 #
 
-allow rpmdb_t rpm_var_lib_t:file map;
-allow rpmdb_t rpmdb_tmp_t:file map;
+can_exec(rpmdb_t, rpm_exec_t)
+can_exec(rpmdb_t, rpmdb_exec_t)
 
 manage_dirs_pattern(rpmdb_t, rpm_var_lib_t, rpm_var_lib_t)
 manage_files_pattern(rpmdb_t, rpm_var_lib_t, rpm_var_lib_t)
-files_usr_filetrans(rpmdb_t, rpm_var_lib_t, dir)
-files_var_lib_filetrans(rpmdb_t, rpm_var_lib_t, dir)
+read_lnk_files_pattern(rpmdb_t, rpm_var_lib_t, rpm_var_lib_t)
+allow rpmdb_t rpm_var_lib_t:file map;
 
 manage_dirs_pattern(rpmdb_t, rpmdb_tmp_t, rpmdb_tmp_t)
 manage_files_pattern(rpmdb_t, rpmdb_tmp_t, rpmdb_tmp_t)
 files_tmp_filetrans(rpmdb_t, rpmdb_tmp_t, { file dir })
+allow rpmdb_t rpmdb_tmp_t:file map;
 
-term_use_all_inherited_terms(rpmdb_t)
-
-auth_dontaudit_read_passwd(rpmdb_t)
+corecmd_exec_bin(rpmdb_t)
+corecmd_exec_shell(rpmdb_t)
 
 files_rw_inherited_non_security_files(rpmdb_t)
+files_usr_filetrans(rpmdb_t, rpm_var_lib_t, dir)
+files_var_lib_filetrans(rpmdb_t, rpm_var_lib_t, dir)
 
 sysnet_dontaudit_read_config(rpmdb_t)
 
+term_use_all_inherited_terms(rpmdb_t)
+
+optional_policy(`
+	auth_dontaudit_read_passwd(rpmdb_t)
+')
+
 optional_policy(`
 	miscfiles_read_generic_certs(rpmdb_t)
+')
+
+optional_policy(`
+	sssd_dontaudit_stream_connect(rpmdb_t)
 ')
 
 optional_policy(`

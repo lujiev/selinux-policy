@@ -219,8 +219,6 @@ init_rw_script_tmp_files(cluster_t)
 init_manage_script_status_files(cluster_t)
 init_dbus_chat(cluster_t)
 
-systemd_dbus_chat_logind(cluster_t)
-
 userdom_delete_user_tmp_files(cluster_t)
 userdom_rw_user_tmp_files(cluster_t)
 userdom_kill_all_users(cluster_t)
@@ -346,6 +344,12 @@ optional_policy(`
     sysnet_domtrans_ifconfig(cluster_t)
 ')
 
+ optional_policy(`
+	systemd_dbus_chat_hostnamed(cluster_t)
+	systemd_dbus_chat_logind(cluster_t)
+	systemd_dbus_chat_timedated(cluster_t)
+')
+
 optional_policy(`
     udev_read_db(cluster_t)
 ')
@@ -373,6 +377,8 @@ optional_policy(`
 
 allow dlm_controld_t self:capability { dac_read_search net_admin sys_admin setgid sys_resource };
 allow dlm_controld_t self:netlink_kobject_uevent_socket create_socket_perms;
+
+allow dlm_controld_t cluster_t:process signull;
 
 files_pid_filetrans(dlm_controld_t, dlm_controld_var_run_t, dir)
 
@@ -647,6 +653,7 @@ manage_sock_files_pattern(haproxy_t, haproxy_var_lib_t, haproxy_var_lib_t)
 files_var_lib_filetrans(haproxy_t, haproxy_var_lib_t, { dir file lnk_file })
 
 kernel_read_network_state(haproxy_t)
+kernel_read_state(haproxy_t)
 
 can_exec(haproxy_t, haproxy_exec_t)
 
@@ -663,7 +670,7 @@ corenet_tcp_connect_http_port(haproxy_t)
 corenet_tcp_connect_http_cache_port(haproxy_t)
 corenet_tcp_connect_rtp_media_port(haproxy_t)
 
-dev_list_sysfs(haproxy_t)
+dev_read_sysfs(haproxy_t)
 dev_read_rand(haproxy_t)
 dev_read_urand(haproxy_t)
 

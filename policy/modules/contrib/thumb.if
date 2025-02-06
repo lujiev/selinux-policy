@@ -149,5 +149,26 @@ interface(`thumb_filetrans_home_content',`
 
 	optional_policy(`
 		gnome_cache_filetrans($1, thumb_home_t, dir, "thumbnails")
+		gnome_data_filetrans($1, thumb_home_t, dir, "thumbnails")
+		gnome_data_filetrans($1, thumb_home_t, dir, "thumbnailers")
 	')
+')
+
+########################################
+## <summary>
+##	Allow the specified domain to read thumb tmp files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`thumb_read_tmp_files',`
+	gen_require(`
+		type thumb_tmp_t;
+	')
+
+	files_search_tmp($1)
+	allow $1 thumb_tmp_t:file read_file_perms;
 ')

@@ -40,7 +40,7 @@ gen_tunable(samba_portmapper, false)
 
 ## <desc>
 ## <p>
-## Allow samba to share users home directories.
+## Allow samba and winbind-rpcd to share users home directories.
 ## </p>
 ## </desc>
 gen_tunable(samba_enable_home_dirs, false)
@@ -126,6 +126,21 @@ files_type(samba_spool_t)
 type samba_var_t;
 files_type(samba_var_t)
 
+type samba_cert_t;
+miscfiles_cert_type(samba_cert_t)
+
+type samba_gpupdate_t;
+type samba_gpupdate_exec_t;
+application_domain(samba_gpupdate_t, samba_gpupdate_exec_t)
+role system_r types samba_gpupdate_t;
+
+type samba_bgqd_t;
+type samba_bgqd_exec_t;
+init_daemon_domain(samba_bgqd_t, samba_bgqd_exec_t)
+
+type samba_bgqd_var_run_t;
+files_pid_file(samba_bgqd_var_run_t)
+
 type smbcontrol_t;
 type smbcontrol_exec_t;
 application_domain(smbcontrol_t, smbcontrol_exec_t)
@@ -186,6 +201,9 @@ logging_log_file(winbind_log_t)
 
 type winbind_rpcd_var_run_t;
 files_pid_file(winbind_rpcd_var_run_t)
+
+type winbind_rpcd_tmp_t;
+files_tmp_file(winbind_rpcd_tmp_t)
 
 type winbind_var_run_t;
 files_pid_file(winbind_var_run_t)
@@ -280,10 +298,63 @@ optional_policy(`
 
 ########################################
 #
+# samba-gpupdate Local policy
+#
+
+domtrans_pattern(winbind_rpcd_t, samba_gpupdate_exec_t, samba_gpupdate_t)
+
+optional_policy(`
+	certmonger_domtrans(samba_gpupdate_t)
+')
+
+########################################
+#
+# samba-bgqd local policy
+#
+
+permissive samba_bgqd_t;
+
+allow samba_bgqd_t self:netlink_route_socket r_netlink_socket_perms;
+allow samba_bgqd_t self:tcp_socket create_stream_socket_perms;
+allow samba_bgqd_t self:udp_socket create_socket_perms;
+allow samba_bgqd_t self:unix_dgram_socket create_socket_perms;
+
+read_files_pattern(samba_bgqd_t, samba_etc_t, samba_etc_t)
+allow samba_bgqd_t samba_log_t:dir create_dir_perms;
+manage_files_pattern(samba_bgqd_t, samba_log_t, samba_log_t)
+allow samba_bgqd_t samba_var_t:dir create_dir_perms;
+allow samba_bgqd_t samba_var_t:file map;
+manage_files_pattern(samba_bgqd_t, samba_var_t, samba_var_t)
+manage_sock_files_pattern(samba_bgqd_t, samba_var_t, samba_var_t)
+
+manage_files_pattern(samba_bgqd_t, samba_bgqd_var_run_t, samba_bgqd_var_run_t)
+files_pid_filetrans(samba_bgqd_t, samba_bgqd_var_run_t, file)
+
+kernel_dgram_send(samba_bgqd_t)
+
+corenet_tcp_connect_ipp_port(samba_bgqd_t)
+
+optional_policy(`
+	auth_read_passwd_file(samba_bgqd_t)
+')
+
+optional_policy(`
+	cups_read_config(samba_bgqd_t)
+	cups_read_pid_files(samba_bgqd_t)
+	cups_stream_connect(samba_bgqd_t)
+')
+
+optional_policy(`
+	sssd_read_public_files(samba_bgqd_t)
+	sssd_search_lib(samba_bgqd_t)
+')
+
+########################################
+#
 # smbd Local policy
 #
 
-allow smbd_t self:capability { chown fowner kill fsetid setgid setuid sys_chroot sys_nice sys_admin sys_resource lease  dac_read_search net_admin };
+allow smbd_t self:capability { chown fowner kill fsetid setgid setuid sys_chroot sys_nice sys_admin sys_resource lease dac_override dac_read_search net_admin };
 dontaudit smbd_t self:capability sys_tty_config;
 dontaudit smbd_t self:capability2 block_suspend;
 allow smbd_t self:process ~{ ptrace setcurrent setexec setfscreate setrlimit execmem execstack execheap };
@@ -369,6 +440,7 @@ allow smbd_t winbind_t:process { signal signull };
 
 kernel_getattr_core_if(smbd_t)
 kernel_getattr_message_if(smbd_t)
+kernel_io_uring_use(smbd_t)
 kernel_read_network_state(smbd_t)
 kernel_read_net_sysctls(smbd_t)
 kernel_read_fs_sysctls(smbd_t)
@@ -471,10 +543,16 @@ tunable_policy(`samba_domain_controller',`
 	usermanage_domtrans_useradd(smbd_t)
 	usermanage_domtrans_groupadd(smbd_t)
 	allow smbd_t self:passwd passwd;
+
+	usermanage_domtrans_passwd(winbind_rpcd_t)
+	allow winbind_rpcd_t self:passwd passwd;
 ')
 
 tunable_policy(`samba_enable_home_dirs',`
 	userdom_manage_user_home_content(smbd_t)
+	userdom_watch_user_home_dirs(smbd_t)
+	userdom_manage_user_home_content(winbind_rpcd_t)
+	userdom_watch_user_home_dirs(winbind_rpcd_t)
 ')
 
 optional_policy(`
@@ -597,6 +675,11 @@ tunable_policy(`samba_export_all_ro',`
     files_dontaudit_list_security_dirs(nmbd_t)
     files_dontaudit_search_security_files(nmbd_t)
     files_dontaudit_read_security_files(nmbd_t)
+    fs_read_noxattr_fs_files(winbind_rpcd_t)
+    files_read_non_security_files(winbind_rpcd_t)
+    files_dontaudit_list_security_dirs(winbind_rpcd_t)
+    files_dontaudit_search_security_files(winbind_rpcd_t)
+    files_dontaudit_read_security_files(winbind_rpcd_t)
 ')
 
 tunable_policy(`samba_export_all_rw',`
@@ -613,6 +696,12 @@ tunable_policy(`samba_export_all_rw',`
     files_dontaudit_list_security_dirs(nmbd_t)
     files_dontaudit_search_security_files(nmbd_t)
     files_dontaudit_read_security_files(nmbd_t)
+    fs_manage_noxattr_fs_files(winbind_rpcd_t)
+    files_manage_non_security_files(winbind_rpcd_t)
+    files_manage_non_security_dirs(winbind_rpcd_t)
+    files_dontaudit_list_security_dirs(winbind_rpcd_t)
+    files_dontaudit_search_security_files(winbind_rpcd_t)
+    files_dontaudit_read_security_files(winbind_rpcd_t)
 ')
 
 userdom_filetrans_home_content(nmbd_t)
@@ -745,6 +834,7 @@ allow smbcontrol_t samba_var_t:file map;
 
 allow smbcontrol_t nmbd_t:unix_dgram_socket sendto;
 allow smbcontrol_t smbd_t:unix_dgram_socket sendto;
+allow smbcontrol_t winbind_rpcd_t:unix_dgram_socket sendto;
 allow smbcontrol_t winbind_t:unix_dgram_socket sendto;
 
 samba_read_config(smbcontrol_t)
@@ -1166,19 +1256,32 @@ optional_policy(`
 #
 
 allow winbind_rpcd_t self:capability { setgid setuid };
+allow winbind_rpcd_t self:key { read write };
 allow winbind_rpcd_t self:netlink_route_socket create_netlink_socket_perms;
+allow winbind_rpcd_t self:process setcap;
 allow winbind_rpcd_t self:unix_dgram_socket { create_socket_perms sendto };
+allow winbind_rpcd_t self:unix_stream_socket connectto;
 allow winbind_rpcd_t self:udp_socket create_socket_perms;
 
 allow winbind_rpcd_t winbind_rpcd_exec_t:file execute_no_trans;
 
 read_files_pattern(winbind_rpcd_t, samba_etc_t, samba_etc_t)
 
+write_files_pattern(winbind_rpcd_t, winbind_var_run_t, winbind_var_run_t)
+write_sock_files_pattern(winbind_rpcd_t, winbind_var_run_t, winbind_var_run_t)
+
 manage_files_pattern(winbind_rpcd_t, winbind_rpcd_var_run_t, winbind_rpcd_var_run_t)
 files_pid_filetrans(winbind_rpcd_t, winbind_rpcd_var_run_t, { dir file })
 
+manage_files_pattern(winbind_rpcd_t, winbind_rpcd_tmp_t, winbind_rpcd_tmp_t)
+files_tmp_filetrans(winbind_rpcd_t, winbind_rpcd_tmp_t, file)
+
 # access to files of other samba domains
+manage_dirs_pattern(winbind_rpcd_t, samba_share_t, samba_share_t)
+manage_files_pattern(winbind_rpcd_t, samba_share_t, samba_share_t)
+
 manage_dirs_pattern(winbind_rpcd_t, smbd_var_run_t, smbd_var_run_t)
+read_files_pattern(winbind_rpcd_t, smbd_var_run_t, smbd_var_run_t)
 manage_sock_files_pattern(winbind_rpcd_t, smbd_var_run_t, smbd_var_run_t)
 
 manage_dirs_pattern(winbind_rpcd_t, samba_log_t, samba_log_t)
@@ -1189,21 +1292,105 @@ manage_files_pattern(winbind_rpcd_t, samba_var_t, samba_var_t)
 manage_sock_files_pattern(winbind_rpcd_t, samba_var_t, samba_var_t)
 allow winbind_rpcd_t samba_var_t:file { map } ;
 
+manage_files_pattern(winbind_rpcd_t, smbd_tmp_t, smbd_tmp_t)
+
 kernel_read_network_state(winbind_rpcd_t)
 
 corecmd_exec_bin(winbind_rpcd_t)
 
+corenet_tcp_connect_ipp_port(winbind_rpcd_t)
+corenet_tcp_connect_ldap_port(winbind_rpcd_t)
+
+dev_getattr_fs(winbind_rpcd_t)
+
+term_getattr_pty_fs(winbind_rpcd_t)
+term_use_ptmx(winbind_rpcd_t)
+
 optional_policy(`
+	auth_domtrans_chk_passwd(winbind_rpcd_t)
 	auth_read_passwd(winbind_rpcd_t)
+')
+
+optional_policy(`
+	ctdbd_stream_connect(winbind_rpcd_t)
+	ctdbd_map_lib_files(winbind_rpcd_t)
+')
+
+optional_policy(`
+	cups_read_config(winbind_rpcd_t)
+	cups_stream_connect(winbind_rpcd_t)
 ')
 
 optional_policy(`
 	dbus_system_bus_client(winbind_rpcd_t)
 ')
 
-# interactions with smbd_t/winbind_t
+optional_policy(`
+	dirsrv_stream_connect(winbind_rpcd_t)
+')
+
+optional_policy(`
+	init_stream_connectto(winbind_rpcd_t)
+')
+
+optional_policy(`
+	kerberos_read_keytab(winbind_rpcd_t)
+	kerberos_use(winbind_rpcd_t)
+')
+
+optional_policy(`
+	logging_send_syslog_msg(winbind_rpcd_t)
+')
+
+optional_policy(`
+	lpd_domtrans_lpr(winbind_rpcd_t)
+')
+
+optional_policy(`
+	miscfiles_read_generic_certs(winbind_rpcd_t)
+	miscfiles_read_public_files(winbind_rpcd_t)
+')
+
+optional_policy(`
+	nscd_socket_use(winbind_rpcd_t)
+')
+
+optional_policy(`
+	sssd_read_public_files(winbind_rpcd_t)
+	sssd_stream_connect(winbind_rpcd_t)
+')
+
+optional_policy(`
+	sysnet_read_config(winbind_rpcd_t)
+')
+
+optional_policy(`
+	systemd_machined_stream_connect(winbind_rpcd_t)
+	systemd_userdbd_stream_connect(winbind_rpcd_t)
+')
+
+optional_policy(`
+	term_use_generic_ptys(winbind_rpcd_t)
+')
+
+optional_policy(`
+	unconfined_dgram_send(winbind_rpcd_t)
+')
+
+# inter-process communication with other samba domains
+allow smbd_t winbind_rpcd_t:process noatsecure;
 allow smbd_t winbind_rpcd_t:unix_stream_socket connectto;
 allow winbind_t winbind_rpcd_t:unix_stream_socket connectto;
+allow winbind_rpcd_t samba_bgqd_t:unix_dgram_socket sendto;
+allow winbind_rpcd_t nmbd_t:unix_dgram_socket sendto;
+allow winbind_rpcd_t smbd_t:unix_dgram_socket sendto;
+allow winbind_rpcd_t winbind_t:unix_dgram_socket sendto;
+allow winbind_rpcd_t winbind_t:unix_stream_socket connectto;
+
+# accessing other samba services and their resources
+allow samba_bgqd_t winbind_rpcd_t:fifo_file write;
+allow winbind_rpcd_t samba_bgqd_exec_t:file exec_file_perms;
+allow winbind_rpcd_t samba_bgqd_var_run_t:file write_file_perms;
 
 samba_domtrans_winbind_rpcd(smbd_t)
 samba_domtrans_winbind_rpcd(winbind_t)

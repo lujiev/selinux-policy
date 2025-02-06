@@ -132,12 +132,11 @@ domain_getattr_all_entry_files(logrotate_t)
 # Read /proc/PID directories for all domains.
 domain_read_all_domains_state(logrotate_t)
 
+files_map_etc_files(logrotate_t)
 files_read_etc_runtime_files(logrotate_t)
 files_read_all_pids(logrotate_t)
 files_search_all(logrotate_t)
 files_read_var_lib_files(logrotate_t)
-# Write to /var/spool/slrnpull - should be moved into its own type.
-files_manage_generic_spool(logrotate_t)
 files_manage_generic_spool_dirs(logrotate_t)
 files_getattr_generic_locks(logrotate_t)
 files_dontaudit_list_mnt(logrotate_t)
@@ -178,6 +177,7 @@ systemd_reload_all_services(logrotate_t)
 systemd_status_all_unit_files(logrotate_t)
 systemd_dbus_chat_logind(logrotate_t)
 systemd_config_generic_services(logrotate_t)
+systemd_dbus_chat_hostnamed(logrotate_t)
 init_stream_connect(logrotate_t)
 init_reload_transient_unit(logrotate_t)
 
@@ -241,6 +241,7 @@ optional_policy(`
 
 optional_policy(`
 	awstats_domtrans(logrotate_t)
+	awstats_domtrans_script(logrotate_t)
 ')
 
 optional_policy(`

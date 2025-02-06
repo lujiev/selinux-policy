@@ -1,3 +1,4 @@
+HOME_ROOT/(.+)\.homedir	--  gen_context(system_u:object_r:user_home_dir_t,s0)
 HOME_DIR	-d	gen_context(system_u:object_r:user_home_dir_t,s0-mls_systemhigh)
 HOME_DIR	-l	gen_context(system_u:object_r:user_home_dir_t,s0-mls_systemhigh)
 HOME_DIR/.+		gen_context(system_u:object_r:user_home_t,s0)
@@ -23,16 +24,17 @@ HOME_DIR/\.texlive2013(/.*)?		gen_context(system_u:object_r:texlive_home_t,s0)
 HOME_DIR/\.texlive2014(/.*)?		gen_context(system_u:object_r:texlive_home_t,s0)
 HOME_DIR/\.tmp			-d	gen_context(system_u:object_r:user_tmp_t,s0)
 HOME_DIR/tmp			-d	gen_context(system_u:object_r:user_tmp_t,s0)
+HOME_DIR/tmp/.*		<<none>>
 
 /tmp/\.X0-lock		--	gen_context(system_u:object_r:user_tmp_t,s0)
 /tmp/\.X11-unix(/.*)?		gen_context(system_u:object_r:user_tmp_t,s0)
 /tmp/\.ICE-unix(/.*)?		gen_context(system_u:object_r:user_tmp_t,s0)
 
-/var/run/user	-d	gen_context(system_u:object_r:user_tmp_t,s0)
-/var/run/user/[^/]+	-d	gen_context(system_u:object_r:user_tmp_t,s0)
-/var/run/user/[^/]+/.+		<<none>>
-/var/run/user/%{USERID}	-d	gen_context(system_u:object_r:user_tmp_t,s0)
-/var/run/user/%{USERID}/.+	<<none>>
+/run/user	-d	gen_context(system_u:object_r:user_tmp_t,s0)
+/run/user/[^/]+	-d	gen_context(system_u:object_r:user_tmp_t,s0)
+/run/user/[^/]+/.+		<<none>>
+/run/user/%{USERID}	-d	gen_context(system_u:object_r:user_tmp_t,s0)
+/run/user/%{USERID}/.+	<<none>>
 
 /tmp/hsperfdata_root        gen_context(system_u:object_r:user_tmp_t,s0)
 /var/tmp/hsperfdata_root    gen_context(system_u:object_r:user_tmp_t,s0)

@@ -187,6 +187,11 @@ type sysctl_kernel_t, sysctl_type;
 fs_associate(sysctl_kernel_t)
 genfscon proc /sys/kernel gen_context(system_u:object_r:sysctl_kernel_t,s0)
 
+# /proc/sys/kernel/nmi_watchdog
+type sysctl_nmi_watchdog_t, sysctl_type;
+fs_associate(sysctl_nmi_watchdog_t)
+genfscon proc /sys/kernel/nmi_watchdog gen_context(system_u:object_r:sysctl_nmi_watchdog_t,s0)
+
 # /sys/kernel/ns_last_pid file
 type sysctl_kernel_ns_last_pid_t, sysctl_type;
 fs_associate(sysctl_kernel_ns_last_pid_t)
@@ -234,6 +239,12 @@ sid file gen_context(system_u:object_r:unlabeled_t,s0)
 typealias unlabeled_t alias file_t;
 neverallow * unlabeled_t:file entrypoint;
 
+# anon_inode types
+type userfaultfd_t;
+type io_uring_t;
+type secretmem_t;
+type kvm_gmem_t;
+
 # These initial sids are no longer used, and can be removed:
 sid any_socket		gen_context(system_u:object_r:unlabeled_t,mls_systemhigh)
 sid file_labels		gen_context(system_u:object_r:unlabeled_t,s0)
@@ -257,13 +268,16 @@ sid tcp_socket		gen_context(system_u:object_r:unlabeled_t,mls_systemhigh)
 # kernel local policy
 #
 
-allow kernel_t self:capability2 mac_admin;
+allow kernel_t self:capability2 ~mac_override;
 allow kernel_t self:capability ~sys_module;
+allow kernel_t self:key manage_key_perms;
+allow kernel_t self:system { ipc_info module_request syslog_console syslog_mod syslog_read };
 allow kernel_t self:process ~{ ptrace setcurrent setexec setfscreate setrlimit execmem execstack execheap };
 allow kernel_t self:shm create_shm_perms;
 allow kernel_t self:sem create_sem_perms;
 allow kernel_t self:msg { send receive };
 allow kernel_t self:msgq create_msgq_perms;
+allow kernel_t self:perf_event manage_perf_event_perms;
 allow kernel_t self:unix_dgram_socket create_socket_perms;
 allow kernel_t self:unix_stream_socket create_stream_socket_perms;
 allow kernel_t self:unix_dgram_socket sendto;
@@ -271,6 +285,7 @@ allow kernel_t self:unix_stream_socket connectto;
 allow kernel_t self:fifo_file rw_fifo_file_perms;
 allow kernel_t self:sock_file read_sock_file_perms;
 allow kernel_t self:fd use;
+allow kernel_t self:bpf { map_create map_read map_write prog_load prog_run };
 
 allow kernel_t debugfs_t:dir search_dir_perms;
 
@@ -327,38 +342,67 @@ dev_search_usbfs(kernel_t)
 # devtmpfs handling:
 dev_create_generic_dirs(kernel_t)
 dev_delete_generic_dirs(kernel_t)
-dev_create_all_blk_files(kernel_t)
-dev_delete_all_blk_files(kernel_t)
-dev_create_all_chr_files(kernel_t)
-dev_delete_all_chr_files(kernel_t)
+dev_manage_all_blk_files(kernel_t)
+dev_manage_all_chr_files(kernel_t)
 dev_mounton(kernel_t)
 dev_filetrans_all_named_dev(kernel_t)
 term_filetrans_all_named_dev(kernel_t)
+# mapping video devices is needed for plymouthd
+dev_map_dri(kernel_t)
+dev_map_framebuffer(kernel_t)
 
+fs_getattr_all_fs(kernel_t)
 # Mount root file system. Used when loading a policy
 # from initrd, then mounting the root filesystem
 fs_mount_all_fs(kernel_t)
 fs_unmount_all_fs(kernel_t)
 
 selinux_load_policy(kernel_t)
+selinux_compute_create_context(kernel_t)
 
 term_use_all_terms(kernel_t)
 term_use_ptmx(kernel_t)
 
-corecmd_exec_shell(kernel_t)
 corecmd_list_bin(kernel_t)
-# /proc/sys/kernel/modprobe is set to /bin/true if not using modules.
-corecmd_exec_bin(kernel_t)
 
+# /proc/sys/kernel/modprobe is set to /bin/true if not using modules,
+# thus allow a transition into a minimal helper domain through generic bin
+# types.
+type kernel_generic_helper_t;
+domain_type(kernel_generic_helper_t)
+role system_r types kernel_generic_helper_t;
+corecmd_bin_entry_type(kernel_generic_helper_t)
+corecmd_bin_domtrans(kernel_t, kernel_generic_helper_t)
+
+allow kernel_generic_helper_t kernel_t:fifo_file read_inherited_fifo_file_perms;
+
+# Enable running `/usr/bin/env [u]mount ...` to support ZFS automounting.
+# See the module/os/linux/zfs/zfs_ctldir.c file in
+# https://github.com/openzfs/zfs/ for the usermode helper calls.
+optional_policy(`
+	mount_domtrans(kernel_generic_helper_t)
+')
+
+domain_use_all_fds(kernel_t)
 domain_signal_all_domains(kernel_t)
 domain_search_all_domains_state(kernel_t)
+domain_connect_all_stream_sockets(kernel_t)
+domain_rw_all_sockets(kernel_t)
+# Needed for overlayfs mounter checks
+# (see: https://bugzilla.redhat.com/show_bug.cgi?id=2215454)
+domain_obj_id_change_exemption(kernel_t)
 
-files_list_root(kernel_t)
-files_list_etc(kernel_t)
-files_list_home(kernel_t)
-files_read_usr_files(kernel_t)
-files_manage_mounttab(kernel_t)
-files_manage_generic_spool_dirs(kernel_t)
+files_manage_all_files(kernel_t)
+files_manage_all_blk_files(kernel_t)
+files_manage_all_chr_files(kernel_t)
+files_relabel_all_files(kernel_t)
+# The 'execute' permission on lower inodes is checked against the mounter
+# cred by overlayfs, so we need to grant it to allow overlay mounts created
+# during early boot to work.
+# In itself, this doesn't allow the kernel to execute all files - an 
+# execute_no_trans permission or a type transition is also needed to grant
+# that ability (and we are much more strict about those).
+files_mmap_exec_all_files(kernel_t)
 
 mcs_process_set_categories(kernel_t)
 mcs_file_read_all(kernel_t)
@@ -398,9 +442,15 @@ optional_policy(`
 ')
 
 optional_policy(`
+	keyutils_request_domtrans(kernel_t)
+')
+
+optional_policy(`
 	init_dbus_chat(kernel_t)
 	init_sigchld(kernel_t)
 	init_dyntrans(kernel_t)
+	# required actually for plymouthd
+	init_read_state(kernel_t)
 ')
 
 optional_policy(`
@@ -453,8 +503,6 @@ optional_policy(`
 	corenet_sendrecv_portmap_client_packets(kernel_t)
 	corenet_sendrecv_generic_server_packets(kernel_t)
 
-	fs_getattr_xattr_fs(kernel_t)
-
 	auth_dontaudit_getattr_shadow(kernel_t)
 
 	sysnet_read_config(kernel_t)
@@ -487,10 +535,17 @@ optional_policy(`
 
 optional_policy(`
 	systemd_coredump_domtrans(kernel_t)
-')
 
-optional_policy(`
-	unconfined_domain_noaudit(kernel_t)
+	# Systemd symlinks /usr/bin/{poweroff,reboot} (which are invoked by
+	# the kernel to perform an orderly poweroff/reboot) to
+	# /usr/bin/systemctl, so we need to allow the kernel to execute it
+	# and trigger the respective service unit.
+	systemd_systemctl_domain(kernel)
+	systemd_config_power_services(kernel_systemctl_t)
+	systemd_dbus_chat_logind(kernel_systemctl_t)
+
+	dbus_system_bus_client(kernel_systemctl_t)
+	init_read_utmp(kernel_systemctl_t)
 ')
 
 optional_policy(`
@@ -537,14 +592,17 @@ if( ! secure_mode_insmod ) {
 #
 
 allow kern_unconfined proc_type:{ file } ~entrypoint;
-allow kern_unconfined proc_type:{ dir lnk_file } *;
+allow kern_unconfined proc_type:dir ~map;
+allow kern_unconfined proc_type:lnk_file *;
 
 allow kern_unconfined sysctl_type:{ file } ~entrypoint;
-allow kern_unconfined sysctl_type:{ dir lnk_file } *;
+allow kern_unconfined sysctl_type:dir ~map;
+allow kern_unconfined sysctl_type:lnk_file *;
 
 allow kern_unconfined kernel_t:system *;
 
-allow kern_unconfined unlabeled_t:{ dir lnk_file sock_file fifo_file chr_file blk_file } *;
+allow kern_unconfined unlabeled_t:dir ~map;
+allow kern_unconfined unlabeled_t:{ lnk_file sock_file fifo_file chr_file blk_file } *;
 allow kern_unconfined unlabeled_t:file ~entrypoint;
 allow kern_unconfined unlabeled_t:filesystem *;
 allow kern_unconfined unlabeled_t:association *;

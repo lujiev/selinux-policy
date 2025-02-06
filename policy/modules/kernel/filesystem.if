@@ -266,6 +266,24 @@ interface(`fs_relabelfrom_xattr_fs',`
 
 ########################################
 ## <summary>
+##      Watch filesystem with extended attributes
+## </summary>
+## <param name="domain">
+##      <summary>
+##      Domain allowed access.
+##      </summary>
+## </param>
+#
+interface(`fs_watch_xattr_fs',`
+	gen_require(`
+		type fs_t;
+	')
+
+	allow $1 fs_t:filesystem watch;
+')
+
+########################################
+## <summary>
 ##	Get the filesystem quotas of a filesystem
 ##	with extended attributes.
 ## </summary>
@@ -583,6 +601,26 @@ interface(`fs_register_binary_executable_type',`
 
 ########################################
 ## <summary>
+##	List bpf directories.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`fs_list_bpf_dirs',`
+	gen_require(`
+		type bpf_t;
+	')
+
+	list_dirs_pattern($1, bpf_t, bpf_t)
+	fs_search_tmpfs($1)
+	dev_search_sysfs($1)
+')
+
+########################################
+## <summary>
 ##	Manage bpf directories.
 ## </summary>
 ## <param name="domain">
@@ -594,7 +632,6 @@ interface(`fs_register_binary_executable_type',`
 interface(`fs_manage_bpf_dirs',`
 	gen_require(`
 		type bpf_t;
-
 	')
 
 	manage_dirs_pattern($1, bpf_t, bpf_t)
@@ -604,7 +641,7 @@ interface(`fs_manage_bpf_dirs',`
 
 ########################################
 ## <summary>
-##	Read bpf files.
+##	Manage bpf files.
 ## </summary>
 ## <param name="domain">
 ##	<summary>
@@ -615,7 +652,6 @@ interface(`fs_manage_bpf_dirs',`
 interface(`fs_manage_bpf_files',`
 	gen_require(`
 		type bpf_t;
-
 	')
 
 	manage_files_pattern($1, bpf_t, bpf_t)
@@ -725,11 +761,10 @@ interface(`fs_getattr_cgroup',`
 #
 interface(`fs_getattr_cgroup_files',`
 	gen_require(`
-		type cgroup_t;
-
+		attribute cgroup_type;
 	')
 
-	getattr_files_pattern($1, cgroup_t, cgroup_t)
+	getattr_files_pattern($1, cgroup_type, cgroup_type)
 	fs_search_tmpfs($1)
 	dev_search_sysfs($1)
 ')
@@ -887,12 +922,11 @@ interface(`fs_watch_cgroup_dirs',`
 #
 interface(`fs_read_cgroup_files',`
 	gen_require(`
-		type cgroup_t;
-
+		attribute cgroup_type;
 	')
 
-	read_files_pattern($1, cgroup_t, cgroup_t)
-	read_lnk_files_pattern($1, cgroup_t, cgroup_t)
+	read_files_pattern($1, cgroup_type, cgroup_type)
+	read_lnk_files_pattern($1, cgroup_type, cgroup_type)
 	fs_search_tmpfs($1)
 	dev_search_sysfs($1)
 ')
@@ -909,12 +943,30 @@ interface(`fs_read_cgroup_files',`
 #
 interface(`fs_write_cgroup_files', `
 	gen_require(`
+		attribute cgroup_type;
+	')
+
+	write_files_pattern($1, cgroup_type, cgroup_type)
+	fs_search_tmpfs($1)
+	dev_search_sysfs($1)
+')
+
+########################################
+## <summary>
+##	Do not audit attempts to write cgroup files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain to not audit.
+##	</summary>
+## </param>
+#
+interface(`fs_dontaudit_write_cgroup_files',`
+	gen_require(`
 		type cgroup_t;
 	')
 
-	write_files_pattern($1, cgroup_t, cgroup_t)
-	fs_search_tmpfs($1)
-	dev_search_sysfs($1)
+	dontaudit $1 cgroup_t:file write_file_perms;
 ')
 
 ########################################
@@ -929,12 +981,11 @@ interface(`fs_write_cgroup_files', `
 #
 interface(`fs_rw_cgroup_files',`
 	gen_require(`
-		type cgroup_t;
-
+		attribute cgroup_type;
 	')
 
-	read_lnk_files_pattern($1, cgroup_t, cgroup_t)
-	rw_files_pattern($1, cgroup_t, cgroup_t)
+	read_lnk_files_pattern($1, cgroup_type, cgroup_type)
+	rw_files_pattern($1, cgroup_type, cgroup_type)
 	fs_search_tmpfs($1)
 	dev_search_sysfs($1)
 ')
@@ -953,10 +1004,10 @@ interface(`fs_rw_cgroup_files',`
 #
 interface(`fs_dontaudit_rw_cgroup_files',`
 	gen_require(`
-		type cgroup_t;
+		attribute cgroup_type;
 	')
 
-	dontaudit $1 cgroup_t:file rw_file_perms;
+	dontaudit $1 cgroup_type:file rw_file_perms;
 ')
 
 ########################################
@@ -971,11 +1022,10 @@ interface(`fs_dontaudit_rw_cgroup_files',`
 #
 interface(`fs_relabel_cgroup_files',`
 	gen_require(`
-		type cgroup_t;
-
+		attribute cgroup_type;
 	')
 
-	relabel_files_pattern($1, cgroup_t, cgroup_t)
+	relabel_files_pattern($1, cgroup_type, cgroup_type)
 ')
 
 ########################################
@@ -990,11 +1040,11 @@ interface(`fs_relabel_cgroup_files',`
 #
 interface(`fs_create_cgroup_files',`
 	gen_require(`
-		type cgroup_t;
+		attribute cgroup_type;
 	')
 
 	dev_search_sysfs($1)
-	create_files_pattern($1, cgroup_t, cgroup_t)
+	create_files_pattern($1, cgroup_type, cgroup_type)
 ')
 
 ########################################
@@ -1009,11 +1059,11 @@ interface(`fs_create_cgroup_files',`
 #
 interface(`fs_manage_cgroup_files',`
 	gen_require(`
-		type cgroup_t;
+		attribute cgroup_type;
 	')
 
-	manage_files_pattern($1, cgroup_t, cgroup_t)
-	manage_lnk_files_pattern($1, cgroup_t, cgroup_t)
+	manage_files_pattern($1, cgroup_type, cgroup_type)
+	manage_lnk_files_pattern($1, cgroup_type, cgroup_type)
 	fs_search_tmpfs($1)
 	dev_search_sysfs($1)
 ')
@@ -1030,14 +1080,70 @@ interface(`fs_manage_cgroup_files',`
 #
 interface(`fs_watch_cgroup_files',`
 	gen_require(`
-		type cgroup_t;
-
+		attribute cgroup_type;
 	')
 
-	watch_files_pattern($1, cgroup_t, cgroup_t)
-	watch_lnk_files_pattern($1, cgroup_t, cgroup_t)
+	watch_files_pattern($1, cgroup_type, cgroup_type)
+	watch_lnk_files_pattern($1, cgroup_type, cgroup_type)
 	fs_search_tmpfs($1)
 	dev_search_sysfs($1)
+')
+
+########################################
+## <summary>
+##	Create the memory.pressure file in a cgroup filesystem
+##	with the memory_pressure_t type using a file transition.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`fs_cgroup_filetrans_memory_pressure',`
+	gen_require(`
+		type cgroup_t;
+		type cgroup_memory_pressure_t;
+	')
+
+	allow $1 cgroup_t:filesystem associate;
+	filetrans_pattern($1, cgroup_t, cgroup_memory_pressure_t, file, "memory.pressure")
+')
+
+########################################
+## <summary>
+##	Get attributes of the memory.pressure files
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`fs_cgroup_getattr_memory_pressure',`
+	gen_require(`
+		type cgroup_memory_pressure_t;
+	')
+
+	getattr_files_pattern($1, cgroup_t, cgroup_memory_pressure_t)
+')
+
+########################################
+## <summary>
+##	Write to the memory.pressure files
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`fs_cgroup_write_memory_pressure',`
+	gen_require(`
+		type cgroup_memory_pressure_t;
+	')
+
+	write_files_pattern($1, cgroup_t, cgroup_memory_pressure_t)
 ')
 
 ########################################
@@ -1224,6 +1330,7 @@ interface(`fs_list_cifs',`
 		type cifs_t;
 	')
 
+	fs_search_auto_mountpoints($1)
 	allow $1 cifs_t:dir list_dir_perms;
 ')
 
@@ -1280,6 +1387,7 @@ interface(`fs_read_cifs_files',`
 		type cifs_t;
 	')
 
+	fs_search_auto_mountpoints($1)
 	allow $1 cifs_t:dir list_dir_perms;
 	read_files_pattern($1, cifs_t, cifs_t)
 ')
@@ -1623,6 +1731,7 @@ interface(`fs_read_cifs_symlinks',`
 		type cifs_t;
 	')
 
+	fs_search_auto_mountpoints($1)
 	allow $1 cifs_t:dir list_dir_perms;
 	read_lnk_files_pattern($1, cifs_t, cifs_t)
 ')
@@ -1643,6 +1752,7 @@ interface(`fs_read_cifs_named_pipes',`
 		type cifs_t;
 	')
 
+	fs_search_auto_mountpoints($1)
 	read_fifo_files_pattern($1, cifs_t, cifs_t)
 ')
 
@@ -1662,6 +1772,7 @@ interface(`fs_read_cifs_named_sockets',`
 		type cifs_t;
 	')
 
+	fs_search_auto_mountpoints($1)
 	read_sock_files_pattern($1, cifs_t, cifs_t)
 ')
 
@@ -1725,6 +1836,7 @@ interface(`fs_manage_cifs_dirs',`
 		type cifs_t;
 	')
 
+	fs_search_auto_mountpoints($1)
 	allow $1 cifs_t:dir manage_dir_perms;
 ')
 
@@ -1765,6 +1877,7 @@ interface(`fs_manage_cifs_files',`
 		type cifs_t;
 	')
 
+	fs_search_auto_mountpoints($1)
 	manage_files_pattern($1, cifs_t, cifs_t)
 ')
 
@@ -1804,6 +1917,7 @@ interface(`fs_manage_cifs_symlinks',`
 		type cifs_t;
 	')
 
+	fs_search_auto_mountpoints($1)
 	manage_lnk_files_pattern($1, cifs_t, cifs_t)
 ')
 
@@ -1823,6 +1937,7 @@ interface(`fs_manage_cifs_named_pipes',`
 		type cifs_t;
 	')
 
+	fs_search_auto_mountpoints($1)
 	manage_fifo_files_pattern($1, cifs_t, cifs_t)
 ')
 
@@ -1842,6 +1957,7 @@ interface(`fs_manage_cifs_named_sockets',`
 		type cifs_t;
 	')
 
+	fs_search_auto_mountpoints($1)
 	manage_sock_files_pattern($1, cifs_t, cifs_t)
 ')
 
@@ -1944,6 +2060,24 @@ interface(`fs_dontaudit_write_configfs_dirs',`
 	')
 
 	dontaudit $1 configfs_t:dir write;
+')
+
+#######################################
+## <summary>
+##	Getattr dirs on a configfs filesystem.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`fs_getattr_configfs_dirs',`
+	gen_require(`
+		type configfs_t;
+	')
+
+	allow $1 configfs_t:dir getattr;
 ')
 
 #######################################
@@ -2158,6 +2292,42 @@ interface(`fs_relabelfrom_dos_fs',`
 
 ########################################
 ## <summary>
+##	Watch dosfs filesystem.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`fs_watch_dos_fs',`
+	gen_require(`
+		type dosfs_t;
+	')
+
+	allow $1 dosfs_t:filesystem watch;
+')
+
+########################################
+## <summary>
+##	Get attributes of a dosfs filesystem.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`fs_getattr_dos_dirs',`
+	gen_require(`
+		type dosfs_t;
+	')
+
+	allow $1 dosfs_t:dir getattr_dir_perms;
+')
+
+########################################
+## <summary>
 ##	Search dosfs filesystem.
 ## </summary>
 ## <param name="domain">
@@ -2209,6 +2379,24 @@ interface(`fs_manage_dos_dirs',`
 	')
 
 	manage_dirs_pattern($1, dosfs_t, dosfs_t)
+')
+
+########################################
+## <summary>
+##	Watch_sb dirs on a DOS filesystem.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`fs_watch_sb_dos_dirs', `
+	gen_require(`
+		type dosfs_t;
+	')
+
+	watch_sb_dirs_pattern($1, dosfs_t, dosfs_t)
 ')
 
 ########################################
@@ -3936,7 +4124,7 @@ interface(`fs_list_pstorefs',`
 
 ########################################
 ## <summary>
-##	Do not audit attempts to list removable storage directories.
+##	List kernel persistent storage directories.
 ## </summary>
 ## <param name="domain">
 ##	<summary>
@@ -3950,6 +4138,44 @@ interface(`fs_list_pstore',`
 	')
 
 	allow $1 pstore_t:dir list_dir_perms;
+')
+
+########################################
+## <summary>
+##	Read kernel persistent storage files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain to not audit.
+##	</summary>
+## </param>
+#
+interface(`fs_read_pstore_files',`
+	gen_require(`
+		type pstore_t;
+	')
+
+	read_files_pattern($1, pstore_t, pstore_t)
+	dev_search_sysfs($1)
+')
+
+########################################
+## <summary>
+##	Delete kernel persistent storage files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain to not audit.
+##	</summary>
+## </param>
+#
+interface(`fs_delete_pstore_files',`
+	gen_require(`
+		type pstore_t;
+	')
+
+	delete_files_pattern($1, pstore_t, pstore_t)
+	dev_search_sysfs($1)
 ')
 
 ########################################
@@ -4224,6 +4450,46 @@ interface(`fs_rw_rpc_sockets',`
 	')
 
 	allow $1 rpc_pipefs_t:sock_file { read write };
+')
+
+########################################
+## <summary>
+##	Create directories on a NFS filesystem.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+## <rolecap/>
+#
+interface(`fs_create_nfs_dirs',`
+	gen_require(`
+		type nfs_t;
+	')
+
+	fs_search_auto_mountpoints($1)
+	create_dirs_pattern($1, nfs_t, nfs_t)
+')
+
+########################################
+## <summary>
+##	Create files on a NFS filesystem.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+## <rolecap/>
+#
+interface(`fs_create_nfs_files',`
+	gen_require(`
+		type nfs_t;
+	')
+
+	fs_search_auto_mountpoints($1)
+	create_files_pattern($1, nfs_t, nfs_t)
 ')
 
 ########################################
@@ -4762,7 +5028,7 @@ interface(`fs_manage_nfsd_fs',`
 
 ########################################
 ## <summary>
-##	Allow the type to associate to ramfs filesystems.
+##	Allow the type to associate to ramfs filesystems. (Deprecated)
 ## </summary>
 ## <param name="type">
 ##	<summary>
@@ -4771,11 +5037,8 @@ interface(`fs_manage_nfsd_fs',`
 ## </param>
 #
 interface(`fs_associate_ramfs',`
-	gen_require(`
-		type ramfs_t;
-	')
-
-	allow $1 ramfs_t:filesystem associate;
+	refpolicywarn(`$0() has been deprecated, please use fs_associate_tmpfs() instead.')
+	fs_associate_tmpfs($1)
 ')
 
 ########################################
@@ -4798,7 +5061,7 @@ interface(`fs_associate_proc',`
 
 ########################################
 ## <summary>
-##	Mount a RAM filesystem.
+##	Mount a RAM filesystem. (Deprecated)
 ## </summary>
 ## <param name="domain">
 ##	<summary>
@@ -4807,17 +5070,14 @@ interface(`fs_associate_proc',`
 ## </param>
 #
 interface(`fs_mount_ramfs',`
-	gen_require(`
-		type ramfs_t;
-	')
-
-	allow $1 ramfs_t:filesystem mount;
+	refpolicywarn(`$0() has been deprecated, please use fs_mount_tmpfs() instead.')
+	fs_mount_tmpfs($1)
 ')
 
 ########################################
 ## <summary>
 ##	Remount a RAM filesystem.  This allows
-##	some mount options to be changed.
+##	some mount options to be changed. (Deprecated)
 ## </summary>
 ## <param name="domain">
 ##	<summary>
@@ -4826,16 +5086,13 @@ interface(`fs_mount_ramfs',`
 ## </param>
 #
 interface(`fs_remount_ramfs',`
-	gen_require(`
-		type ramfs_t;
-	')
-
-	allow $1 ramfs_t:filesystem remount;
+	refpolicywarn(`$0() has been deprecated, please use fs_remount_tmpfs() instead.')
+	fs_remount_tmpfs($1)
 ')
 
 ########################################
 ## <summary>
-##	Unmount a RAM filesystem.
+##	Unmount a RAM filesystem. (Deprecated)
 ## </summary>
 ## <param name="domain">
 ##	<summary>
@@ -4844,16 +5101,13 @@ interface(`fs_remount_ramfs',`
 ## </param>
 #
 interface(`fs_unmount_ramfs',`
-	gen_require(`
-		type ramfs_t;
-	')
-
-	allow $1 ramfs_t:filesystem unmount;
+	refpolicywarn(`$0() has been deprecated, please use fs_unmount_tmpfs() instead.')
+	fs_unmount_tmpfs($1)
 ')
 
 ########################################
 ## <summary>
-##	Get the attributes of a RAM filesystem.
+##	Get the attributes of a RAM filesystem. (Deprecated)
 ## </summary>
 ## <param name="domain">
 ##	<summary>
@@ -4862,16 +5116,13 @@ interface(`fs_unmount_ramfs',`
 ## </param>
 #
 interface(`fs_getattr_ramfs',`
-	gen_require(`
-		type ramfs_t;
-	')
-
-	allow $1 ramfs_t:filesystem getattr;
+	refpolicywarn(`$0() has been deprecated, please use fs_getattr_tmpfs() instead.')
+	fs_getattr_tmpfs($1)
 ')
 
 ########################################
 ## <summary>
-##	Search directories on a ramfs
+##	Search directories on a ramfs (Deprecated)
 ## </summary>
 ## <param name="domain">
 ##	<summary>
@@ -4880,16 +5131,13 @@ interface(`fs_getattr_ramfs',`
 ## </param>
 #
 interface(`fs_search_ramfs',`
-	gen_require(`
-		type ramfs_t;
-	')
-
-	allow $1 ramfs_t:dir search_dir_perms;
+	refpolicywarn(`$0() has been deprecated, please use fs_search_tmpfs() instead.')
+	fs_search_tmpfs($1)
 ')
 
 ########################################
 ## <summary>
-##	Do not audit attempts to search directories on a ramfs
+##	Do not audit attempts to search directories on a ramfs (Deprecated)
 ## </summary>
 ## <param name="domain">
 ##	<summary>
@@ -4898,17 +5146,13 @@ interface(`fs_search_ramfs',`
 ## </param>
 #
 interface(`fs_dontaudit_search_ramfs',`
-	gen_require(`
-		type ramfs_t;
-	')
-
-	dontaudit $1 ramfs_t:dir search_dir_perms;
+	refpolicywarn(`$0() has been deprecated.')
 ')
 
 ########################################
 ## <summary>
 ##	Create, read, write, and delete
-##	directories on a ramfs.
+##	directories on a ramfs. (Deprecated)
 ## </summary>
 ## <param name="domain">
 ##	<summary>
@@ -4917,16 +5161,13 @@ interface(`fs_dontaudit_search_ramfs',`
 ## </param>
 #
 interface(`fs_manage_ramfs_dirs',`
-	gen_require(`
-		type ramfs_t;
-	')
-
-	allow $1 ramfs_t:dir manage_dir_perms;
+	refpolicywarn(`$0() has been deprecated, please use fs_manage_tmpfs_dirs() instead.')
+	fs_manage_tmpfs_dirs($1)
 ')
 
 ########################################
 ## <summary>
-##	Do not audit attempts to read on a ramfs files.
+##	Do not audit attempts to read on a ramfs files. (Deprecated)
 ## </summary>
 ## <param name="domain">
 ##	<summary>
@@ -4935,16 +5176,13 @@ interface(`fs_manage_ramfs_dirs',`
 ## </param>
 #
 interface(`fs_dontaudit_read_ramfs_files',`
-	gen_require(`
-		type ramfs_t;
-	')
-
-	dontaudit $1 ramfs_t:file read;
+	refpolicywarn(`$0() has been deprecated, please use fs_dontaudit_read_tmpfs_files() instead.')
+	fs_dontaudit_read_tmpfs_files($1)
 ')
 
 ########################################
 ## <summary>
-##	Do not audit attempts to read on a ramfs fifo_files.
+##	Do not audit attempts to read on a ramfs fifo_files. (Deprecated)
 ## </summary>
 ## <param name="domain">
 ##	<summary>
@@ -4953,17 +5191,13 @@ interface(`fs_dontaudit_read_ramfs_files',`
 ## </param>
 #
 interface(`fs_dontaudit_read_ramfs_pipes',`
-	gen_require(`
-		type ramfs_t;
-	')
-
-	dontaudit $1 ramfs_t:fifo_file read;
+	refpolicywarn(`$0() has been deprecated.')
 ')
 
 ########################################
 ## <summary>
 ##	Create, read, write, and delete
-##	files on a ramfs filesystem.
+##	files on a ramfs filesystem. (Deprecated)
 ## </summary>
 ## <param name="domain">
 ##	<summary>
@@ -4972,16 +5206,13 @@ interface(`fs_dontaudit_read_ramfs_pipes',`
 ## </param>
 #
 interface(`fs_manage_ramfs_files',`
-	gen_require(`
-		type ramfs_t;
-	')
-
-	manage_files_pattern($1, ramfs_t, ramfs_t)
+	refpolicywarn(`$0() has been deprecated, please use fs_manage_tmpfs_files() instead.')
+	fs_manage_tmpfs_files($1)
 ')
 
 ########################################
 ## <summary>
-##	Write to named pipe on a ramfs filesystem.
+##	Write to named pipe on a ramfs filesystem. (Deprecated)
 ## </summary>
 ## <param name="domain">
 ##	<summary>
@@ -4990,17 +5221,13 @@ interface(`fs_manage_ramfs_files',`
 ## </param>
 #
 interface(`fs_write_ramfs_pipes',`
-	gen_require(`
-		type ramfs_t;
-	')
-
-	write_fifo_files_pattern($1, ramfs_t, ramfs_t)
+	refpolicywarn(`$0() has been deprecated.')
 ')
 
 ########################################
 ## <summary>
 ##	Do not audit attempts to write to named
-##	pipes on a ramfs filesystem.
+##	pipes on a ramfs filesystem. (Deprecated)
 ## </summary>
 ## <param name="domain">
 ##	<summary>
@@ -5009,16 +5236,12 @@ interface(`fs_write_ramfs_pipes',`
 ## </param>
 #
 interface(`fs_dontaudit_write_ramfs_pipes',`
-	gen_require(`
-		type ramfs_t;
-	')
-
-	dontaudit $1 ramfs_t:fifo_file write;
+	refpolicywarn(`$0() has been deprecated.')
 ')
 
 ########################################
 ## <summary>
-##	Read and write a named pipe on a ramfs filesystem.
+##	Read and write a named pipe on a ramfs filesystem. (Deprecated)
 ## </summary>
 ## <param name="domain">
 ##	<summary>
@@ -5027,17 +5250,13 @@ interface(`fs_dontaudit_write_ramfs_pipes',`
 ## </param>
 #
 interface(`fs_rw_ramfs_pipes',`
-	gen_require(`
-		type ramfs_t;
-	')
-
-	rw_fifo_files_pattern($1, ramfs_t, ramfs_t)
+	refpolicywarn(`$0() has been deprecated.')
 ')
 
 ########################################
 ## <summary>
 ##	Create, read, write, and delete
-##	named pipes on a ramfs filesystem.
+##	named pipes on a ramfs filesystem. (Deprecated)
 ## </summary>
 ## <param name="domain">
 ##	<summary>
@@ -5046,16 +5265,12 @@ interface(`fs_rw_ramfs_pipes',`
 ## </param>
 #
 interface(`fs_manage_ramfs_pipes',`
-	gen_require(`
-		type ramfs_t;
-	')
-
-	manage_fifo_files_pattern($1, ramfs_t, ramfs_t)
+	refpolicywarn(`$0() has been deprecated.')
 ')
 
 ########################################
 ## <summary>
-##	Write to named socket on a ramfs filesystem.
+##	Write to named socket on a ramfs filesystem. (Deprecated)
 ## </summary>
 ## <param name="domain">
 ##	<summary>
@@ -5064,17 +5279,13 @@ interface(`fs_manage_ramfs_pipes',`
 ## </param>
 #
 interface(`fs_write_ramfs_sockets',`
-	gen_require(`
-		type ramfs_t;
-	')
-
-	write_sock_files_pattern($1, ramfs_t, ramfs_t)
+	refpolicywarn(`$0() has been deprecated.')
 ')
 
 ########################################
 ## <summary>
 ##	Create, read, write, and delete
-##	named sockets on a ramfs filesystem.
+##	named sockets on a ramfs filesystem. (Deprecated)
 ## </summary>
 ## <param name="domain">
 ##	<summary>
@@ -5083,11 +5294,7 @@ interface(`fs_write_ramfs_sockets',`
 ## </param>
 #
 interface(`fs_manage_ramfs_sockets',`
-	gen_require(`
-		type ramfs_t;
-	')
-
-	manage_sock_files_pattern($1, ramfs_t, ramfs_t)
+	refpolicywarn(`$0() has been deprecated.')
 ')
 
 ########################################
@@ -5276,6 +5483,24 @@ interface(`fs_mount_tmpfs',`
 
 ########################################
 ## <summary>
+##      Watch a tmpfs filesystem.
+## </summary>
+## <param name="domain">
+##      <summary>
+##      Domain allowed access.
+##      </summary>
+## </param>
+#
+interface(`fs_watch_tmpfs',`
+	gen_require(`
+		type tmpfs_t;
+	')
+
+	allow $1 tmpfs_t:filesystem watch;
+')
+
+########################################
+## <summary>
 ##	Dontaudit remount a tmpfs filesystem.
 ## </summary>
 ## <param name="domain">
@@ -5362,6 +5587,24 @@ interface(`fs_mounton_tmpfs', `
 	')
 
 	allow $1 tmpfs_t:dir mounton;
+')
+
+########################################
+## <summary>
+##      Watch_sb tmpfs directories.
+## </summary>
+## <param name="domain">
+##      <summary>
+##      Domain allowed access.
+##      </summary>
+## </param>
+#
+interface(`fs_watch_sb_tmpfs', `
+        gen_require(`
+                type tmpfs_t;
+        ')
+
+        watch_sb_dirs_pattern($1, tmpfs_t, tmpfs_t)
 ')
 
 ########################################
@@ -5822,7 +6065,25 @@ interface(`fs_rw_inherited_tmpfs_files',`
 		type tmpfs_t;
 	')
 
-	allow $1 tmpfs_t:file { read write };
+	allow $1 tmpfs_t:file { rw_inherited_file_perms };
+')
+
+########################################
+## <summary>
+##	Map generic tmpfs files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`fs_map_tmpfs_files',`
+	gen_require(`
+		type tmpfs_t;
+	')
+
+	allow $1 tmpfs_t:file map;
 ')
 
 ########################################
@@ -5878,6 +6139,42 @@ interface(`fs_rw_tmpfs_chr_files',`
 
 	allow $1 tmpfs_t:dir list_dir_perms;
 	rw_chr_files_pattern($1, tmpfs_t, tmpfs_t)
+')
+
+########################################
+## <summary>
+##	Create character nodes on tmpfs filesystems.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain to not audit.
+##	</summary>
+## </param>
+#
+interface(`fs_create_tmpfs_chr_blk_files',`
+	gen_require(`
+		type tmpfs_t;
+	')
+
+	allow $1 tmpfs_t:chr_file create_blk_file_perms;
+')
+
+########################################
+## <summary>
+##	Set attributes of character nodes on tmpfs filesystems.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain to not audit.
+##	</summary>
+## </param>
+#
+interface(`fs_setattr_tmpfs_chr_blk_files',`
+	gen_require(`
+		type tmpfs_t;
+	')
+
+	allow $1 tmpfs_t:chr_file setattr;
 ')
 
 ########################################
@@ -6144,6 +6441,25 @@ interface(`fs_manage_tmpfs_sockets',`
 
 ########################################
 ## <summary>
+##	Write to socket files on tmpfs filesystems.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`fs_write_tmpfs_socket_files',`
+	gen_require(`
+		type tmpfs_t;
+	')
+
+	write_sock_files_pattern($1, tmpfs_t, tmpfs_t)
+	fs_search_tmpfs($1)
+')
+
+########################################
+## <summary>
 ##	Read and write, create and delete character
 ##	nodes on tmpfs filesystems.
 ## </summary>
@@ -6233,6 +6549,24 @@ interface(`fs_read_xenfs_files',`
 	')
 
 	allow $1 xenfs_t:file read_file_perms;
+')
+
+########################################
+## <summary>
+##	Map files on a XENFS filesystem.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`fs_map_xenfs_files',`
+	gen_require(`
+		type xenfs_t;
+	')
+
+	allow $1 xenfs_t:file map;
 ')
 
 ########################################
@@ -6370,6 +6704,24 @@ interface(`fs_unmount_all_fs',`
 	')
 
 	allow $1 filesystem_type:filesystem unmount;
+')
+
+########################################
+## <summary>
+##	Watch all filesystems.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`fs_watch_all_fs',`
+	gen_require(`
+		attribute filesystem_type;
+	')
+
+	allow $1 filesystem_type:filesystem watch;
 ')
 
 ########################################
@@ -6536,6 +6888,25 @@ interface(`fs_dontaudit_getattr_all_dirs',`
 	')
 
 	dontaudit $1 filesystem_type:dir getattr;
+')
+
+########################################
+## <summary>
+##	Dontaudit map of all directories
+##	with a filesystem type.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`fs_dontaudit_map_all_dirs',`
+	gen_require(`
+		attribute filesystem_type;
+	')
+
+	dontaudit $1 filesystem_type:dir map;
 ')
 
 ########################################
@@ -6846,6 +7217,44 @@ interface(`fs_read_efivarfs_files',`
 
 #######################################
 ## <summary>
+##	Read and write files in efivarfs
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+## <rolecap/>
+#
+interface(`fs_rw_efivarfs_files',`
+	gen_require(`
+		type efivarfs_t;
+	')
+
+	rw_files_pattern($1, efivarfs_t, efivarfs_t)
+')
+
+#######################################
+## <summary>
+##      Create efivarfs files 
+## </summary>
+## <param name="domain">
+##      <summary>
+##      Domain allowed access.
+##      </summary>
+## </param>
+## <rolecap/>
+#
+interface(`fs_create_efivarfs_files',`
+        gen_require(`
+                type efivarfs_t;
+        ')
+
+        create_files_pattern($1, efivarfs_t, efivarfs_t)
+')
+
+#######################################
+## <summary>
 ##      Manage efivarfs files 
 ## </summary>
 ## <param name="domain">
@@ -6924,6 +7333,24 @@ interface(`fs_rw_onload_sockets',`
 
 ########################################
 ## <summary>
+##	Search tracefs_t directories
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`fs_search_tracefs_dirs',`
+	gen_require(`
+		type tracefs_t;
+	')
+
+	search_dirs_pattern($1, tracefs_t, tracefs_t)
+')
+
+########################################
+## <summary>
 ##	Read and write tracefs_t files
 ## </summary>
 ## <param name="domain">
@@ -6938,7 +7365,6 @@ interface(`fs_rw_tracefs_files',`
 	')
 
 	rw_files_pattern($1, tracefs_t, tracefs_t)
-	allow $1 self:lockdown confidentiality;
 ')
 
 ########################################
@@ -6959,7 +7385,6 @@ interface(`fs_manage_tracefs_dirs',`
 	')
 
 	manage_dirs_pattern($1, tracefs_t, tracefs_t)
-	allow $1 self:lockdown confidentiality;
 ')
 
 ########################################

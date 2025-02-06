@@ -54,6 +54,7 @@ template(`sudo_role_template',`
 	allow $1_sudo_t $1_sudo_tmp_t:file manage_file_perms;
 	files_tmp_filetrans($1_sudo_t, $1_sudo_tmp_t, file)
 
+	allow $1_sudo_t $3:process getpgid;
 	allow $1_sudo_t $3:dir search_dir_perms;;
 	allow $1_sudo_t $3:file read_file_perms;;
 	allow $1_sudo_t $3:key search;
@@ -96,8 +97,17 @@ template(`sudo_role_template',`
     ')
 
 	optional_policy(`
+		dmidecode_domtrans($1_sudo_t)
+	')
+
+	optional_policy(`
 	    	kerberos_manage_host_rcache($1_sudo_t)
 		kerberos_read_config($1_sudo_t)
+	')
+
+	optional_policy(`
+		netutils_domtrans($1_sudo_t)
+		netutils_run_traceroute($1_sudo_t, $2)
 	')
 
 	optional_policy(`
@@ -168,4 +178,22 @@ interface(`sudo_manage_db',`
     
     manage_dirs_pattern($1, sudo_db_t, sudo_db_t)
     manage_files_pattern($1, sudo_db_t, sudo_db_t)
+')
+
+########################################
+## <summary>
+## 	Transition to sudo log named content
+## </summary>
+## <param name="domain">
+## <summary>
+##	Domain allowed access.
+## </summary>
+## </param>
+#
+interface(`sudo_filetrans_named_content_log',`
+	gen_require(`
+		type sudo_log_t;
+	')
+
+	logging_log_filetrans($1, sudo_log_t, file, "sudo.log")
 ')

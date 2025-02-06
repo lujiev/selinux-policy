@@ -46,6 +46,29 @@ interface(`storage_rw_inherited_fixed_disk_dev',`
 
 ########################################
 ## <summary>
+##	Allow the caller to read/write fixed disk
+##	device block files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	The domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`storage_rw_fixed_disk_blk_dev',`
+	gen_require(`
+		type fixed_disk_device_t;
+		attribute fixed_disk_raw_read;
+		attribute fixed_disk_raw_write;
+	')
+
+	allow $1 fixed_disk_device_t:blk_file read_blk_file_perms;
+	typeattribute $1 fixed_disk_raw_read;
+	typeattribute $1 fixed_disk_raw_write;
+')
+
+########################################
+## <summary>
 ##	Do not audit attempts made by the caller to get
 ##	the attributes of fixed disk device nodes.
 ## </summary>
@@ -101,6 +124,30 @@ interface(`storage_dontaudit_setattr_fixed_disk_dev',`
 	')
 
 	dontaudit $1 fixed_disk_device_t:blk_file setattr;
+')
+
+########################################
+## <summary>
+##	Allow the caller to directly read from a fixed disk device.
+##	This is extremly dangerous as it can bypass the
+##	SELinux protections for filesystem objects, and
+##	should only be used by trusted domains.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`storage_raw_read_fixed_disk_blk_device',`
+	gen_require(`
+		attribute fixed_disk_raw_read;
+		type fixed_disk_device_t;
+	')
+
+	dev_list_all_dev_nodes($1)
+	allow $1 fixed_disk_device_t:blk_file read_blk_file_perms;
+	typeattribute $1 fixed_disk_raw_read;
 ')
 
 ########################################

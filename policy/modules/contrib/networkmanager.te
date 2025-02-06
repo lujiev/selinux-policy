@@ -49,7 +49,6 @@ type NetworkManager_dispatcher_custom_t, networkmanager_dispatcher_plugin;
 role system_r types NetworkManager_dispatcher_custom_t;
 application_domain(NetworkManager_dispatcher_custom_t, NetworkManager_dispatcher_script_t)
 domtrans_pattern(NetworkManager_dispatcher_t, NetworkManager_dispatcher_script_t, NetworkManager_dispatcher_custom_t)
-permissive NetworkManager_dispatcher_custom_t;
 
 networkmanager_dispatcher_plugin_template(chronyc)
 networkmanager_dispatcher_plugin_template(cloud)
@@ -79,6 +78,8 @@ init_system_domain(wpa_cli_t, wpa_cli_exec_t)
 # and it receives a unexpected signal (rh bug #204161)
 allow NetworkManager_t self:capability { fowner chown fsetid kill setgid setuid sys_admin sys_nice dac_read_search dac_override net_admin net_raw net_bind_service ipc_lock sys_chroot };
 dontaudit NetworkManager_t self:capability sys_tty_config;
+allow NetworkManager_t self:capability2 bpf;
+allow NetworkManager_t self:cap_userns sys_ptrace;
 
 allow NetworkManager_t self:bpf { map_create map_read map_write prog_load prog_run };
 
@@ -197,7 +198,6 @@ dev_read_rand(NetworkManager_t)
 dev_read_urand(NetworkManager_t)
 dev_dontaudit_getattr_generic_blk_files(NetworkManager_t)
 dev_getattr_all_chr_files(NetworkManager_t)
-dev_rw_crypto(NetworkManager_t)
 dev_rw_wireless(NetworkManager_t)
 
 fs_getattr_all_fs(NetworkManager_t)
@@ -275,6 +275,9 @@ userdom_dontaudit_use_user_ttys(NetworkManager_t)
 userdom_read_home_certs(NetworkManager_t)
 userdom_read_user_home_content_files(NetworkManager_t)
 userdom_dgram_send(NetworkManager_t)
+
+fs_read_tmpfs_files(NetworkManager_t)
+fs_delete_tmpfs_files(NetworkManager_t)
 
 tunable_policy(`use_nfs_home_dirs',`
     fs_read_nfs_files(NetworkManager_t)
@@ -533,6 +536,7 @@ optional_policy(`
 
 optional_policy(`
 	unconfined_dgram_send(NetworkManager_t)
+	unconfined_signal(NetworkManager_t)
 ')
 
 
@@ -554,6 +558,8 @@ allow NetworkManager_dispatcher_t self:capability sys_nice;
 allow NetworkManager_dispatcher_tlp_t self:capability sys_nice;
 allow NetworkManager_dispatcher_t self:process setsched;
 allow NetworkManager_dispatcher_tlp_t self:process setsched;
+allow NetworkManager_dispatcher_console_t self:process setfscreate;
+
 allow NetworkManager_dispatcher_t self:netlink_route_socket create_netlink_socket_perms;
 allow NetworkManager_dispatcher_ddclient_t self:netlink_route_socket create_netlink_socket_perms;
 allow NetworkManager_dispatcher_custom_t self:netlink_route_socket create_netlink_socket_perms;
@@ -562,10 +568,17 @@ allow NetworkManager_dispatcher_custom_t self:udp_socket create_socket_perms;
 allow NetworkManager_dispatcher_ddclient_t self:udp_socket create_socket_perms;
 allow NetworkManager_dispatcher_t self:unix_dgram_socket { create_socket_perms sendto };
 allow NetworkManager_dispatcher_ddclient_t self:unix_dgram_socket { create_socket_perms sendto };
+allow NetworkManager_dispatcher_tlp_t self:unix_dgram_socket { create_socket_perms sendto };
+allow NetworkManager_dispatcher_custom_t self:unix_dgram_socket { create_socket_perms sendto };
+
+allow NetworkManager_dispatcher_t networkmanager_dispatcher_plugin:process sigkill;
+
 allow NetworkManager_dispatcher_t NetworkManager_unit_file_t:file getattr;
 allow NetworkManager_dispatcher_cloud_t NetworkManager_unit_file_t:file getattr;
+allow NetworkManager_dispatcher_cloud_t NetworkManager_unit_file_t:service { start status stop };
 
 list_dirs_pattern(NetworkManager_dispatcher_t, NetworkManager_etc_t, NetworkManager_dispatcher_script_t)
+list_dirs_pattern(networkmanager_dispatcher_plugin, NetworkManager_etc_t, NetworkManager_dispatcher_script_t)
 list_dirs_pattern(NetworkManager_dispatcher_t, NetworkManager_dispatcher_script_t, networkmanager_dispatcher_script)
 read_files_pattern(NetworkManager_dispatcher_t, NetworkManager_dispatcher_script_t, networkmanager_dispatcher_script)
 read_lnk_files_pattern(NetworkManager_dispatcher_t, NetworkManager_dispatcher_script_t, networkmanager_dispatcher_script)
@@ -576,6 +589,9 @@ manage_files_pattern(NetworkManager_dispatcher_console_t, NetworkManager_dispatc
 
 read_files_pattern(NetworkManager_dispatcher_dnssec_t, NetworkManager_etc_t, NetworkManager_etc_rw_t)
 
+kernel_read_proc_files(networkmanager_dispatcher_plugin)
+kernel_request_load_module(NetworkManager_dispatcher_ddclient_t)
+
 auth_read_passwd(networkmanager_dispatcher_plugin)
 
 corecmd_exec_bin(NetworkManager_dispatcher_t)
@@ -584,6 +600,7 @@ corecmd_exec_shell(NetworkManager_dispatcher_t)
 corecmd_exec_shell(NetworkManager_dispatcher_chronyc_t)
 corecmd_exec_shell(NetworkManager_dispatcher_cloud_t)
 corecmd_exec_shell(NetworkManager_dispatcher_custom_t)
+corecmd_exec_shell(NetworkManager_dispatcher_dhclient_t)
 corecmd_exec_shell(NetworkManager_dispatcher_iscsid_t)
 corecmd_exec_shell(NetworkManager_dispatcher_winbind_t)
 
@@ -594,8 +611,7 @@ dev_rw_wireless(NetworkManager_dispatcher_tlp_t)
 
 domain_read_all_domains_state(NetworkManager_dispatcher_dnssec_t)
 
-files_create_etc_files(NetworkManager_dispatcher_console_t)
-files_rw_etc_files(NetworkManager_dispatcher_console_t)
+files_manage_etc_files(NetworkManager_dispatcher_console_t)
 
 init_status(NetworkManager_dispatcher_cloud_t)
 init_status(NetworkManager_dispatcher_ddclient_t)
@@ -623,6 +639,11 @@ optional_policy(`
 	dbus_system_bus_client(NetworkManager_dispatcher_tlp_t)
 	networkmanager_dbus_chat(NetworkManager_dispatcher_tlp_t)
 	dbus_system_bus_client(NetworkManager_dispatcher_custom_t)
+	networkmanager_dbus_chat(NetworkManager_dispatcher_custom_t)
+')
+
+optional_policy(`
+	ddclient_getattr_pid_files(NetworkManager_dispatcher_ddclient_t)
 ')
 
 optional_policy(`
@@ -640,9 +661,18 @@ optional_policy(`
 
 optional_policy(`
 	logging_send_syslog_msg(NetworkManager_dispatcher_t)
+	logging_send_syslog_msg(NetworkManager_dispatcher_tlp_t)
 ')
 
 optional_policy(`
+	nscd_read_pid(networkmanager_dispatcher_plugin)
+	nscd_socket_use(networkmanager_dispatcher_plugin)
+')
+
+optional_policy(`
+	samba_domtrans_smbcontrol(NetworkManager_dispatcher_winbind_t)
+	samba_read_config(NetworkManager_dispatcher_winbind_t)
+	samba_rw_var_files(NetworkManager_dispatcher_winbind_t)
 	samba_service_status(NetworkManager_dispatcher_winbind_t)
 ')
 
@@ -653,6 +683,7 @@ optional_policy(`
 optional_policy(`
 	sysnet_exec_ifconfig(networkmanager_dispatcher_plugin)
 	sysnet_read_config(networkmanager_dispatcher_plugin)
+	sysnet_read_dhcp_config(NetworkManager_dispatcher_dhclient_t)
 ')
 
 optional_policy(`
@@ -663,12 +694,21 @@ optional_policy(`
 	systemd_exec_systemctl(NetworkManager_dispatcher_winbind_t)
 	systemd_exec_systemctl(NetworkManager_dispatcher_custom_t)
 	systemd_getattr_unit_files(NetworkManager_dispatcher_ddclient_t)
+	systemd_start_systemd_services(NetworkManager_dispatcher_ddclient_t)
+	systemd_stop_systemd_services(NetworkManager_dispatcher_ddclient_t)
+	systemd_status_systemd_services(NetworkManager_dispatcher_ddclient_t)
 	systemd_start_systemd_services(NetworkManager_dispatcher_sendmail_t)
+	systemd_status_systemd_services(NetworkManager_dispatcher_sendmail_t)
 ')
 
 optional_policy(`
+	tlp_create_pid_dirs(NetworkManager_dispatcher_tlp_t)
 	tlp_manage_pid_files(NetworkManager_dispatcher_tlp_t)
 	tlp_filetrans_named_content(NetworkManager_dispatcher_tlp_t)
+')
+
+optional_policy(`
+	unconfined_domain(NetworkManager_dispatcher_custom_t)
 ')
 
 ########################################

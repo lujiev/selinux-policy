@@ -109,6 +109,13 @@ gen_tunable(httpd_can_network_memcache, false)
 
 ## <desc>
 ## <p>
+## Allow httpd to connect to redis
+## </p>
+## </desc>
+gen_tunable(httpd_can_network_redis, false)
+
+## <desc>
+## <p>
 ## Allow httpd to act as a relay
 ## </p>
 ## </desc>
@@ -597,6 +604,7 @@ manage_files_pattern(httpd_t, squirrelmail_spool_t, squirrelmail_spool_t)
 manage_lnk_files_pattern(httpd_t, squirrelmail_spool_t, squirrelmail_spool_t)
 
 kernel_read_kernel_sysctls(httpd_t)
+kernel_read_net_sysctls(httpd_t)
 # for modules that want to access /proc/meminfo
 kernel_read_system_state(httpd_t)
 kernel_read_network_state(httpd_t)
@@ -627,7 +635,6 @@ tunable_policy(`httpd_graceful_shutdown',`
 dev_read_sysfs(httpd_t)
 dev_read_rand(httpd_t)
 dev_read_urand(httpd_t)
-dev_rw_crypto(httpd_t)
 dev_rw_zero(httpd_t)
 
 files_dontaudit_write_all_mountpoints(httpd_t)
@@ -740,6 +747,10 @@ tunable_policy(`httpd_can_network_connect_db',`
 
 tunable_policy(`httpd_can_network_memcache',`
 	corenet_tcp_connect_memcache_port(httpd_t)
+')
+
+tunable_policy(`httpd_can_network_redis',`
+	corenet_tcp_connect_redis_port(httpd_t)
 ')
 
 tunable_policy(`httpd_can_network_relay',`
@@ -886,6 +897,10 @@ tunable_policy(`httpd_use_fusefs',`
 	fs_manage_fusefs_symlinks(httpd_t)
 ')
 
+tunable_policy(`httpd_use_opencryptoki',`
+	allow httpd_t self:capability fowner;
+')
+
 tunable_policy(`httpd_setrlimit',`
 	allow httpd_t self:process setrlimit;
 	allow httpd_t self:capability sys_resource;
@@ -930,6 +945,9 @@ optional_policy(`
 ')
 
 optional_policy(`
+	# type transitions with a filename not allowed inside conditionals
+	pkcs_tmpfs_named_filetrans(httpd_t)
+
     tunable_policy(`httpd_use_opencryptoki',`
         pkcs_use_opencryptoki(httpd_t)
     ')
@@ -973,6 +991,7 @@ optional_policy(`
 ')
 
 optional_policy(`
+	dirsrv_getattr_unit_files(httpd_t)
 	dirsrv_manage_config(httpd_t)
 	dirsrv_manage_log(httpd_t)
 	dirsrv_manage_var_run(httpd_t)
@@ -1016,6 +1035,10 @@ optional_policy(`
 
 optional_policy(`
 	ica_rw_map_tmpfs_files(httpd_t)
+')
+
+optional_policy(`
+	insights_client_write_tmp(httpd_t)
 ')
 
 optional_policy(`
@@ -1349,6 +1372,10 @@ optional_policy(`
 	')
 ')
 
+optional_policy(`
+	systemd_private_tmp(httpd_php_tmp_t)
+')
+
 ########################################
 #
 # Apache suexec local policy
@@ -1663,6 +1690,8 @@ optional_policy(`
 allow httpd_rotatelogs_t self:capability { dac_read_search  };
 
 manage_files_pattern(httpd_rotatelogs_t, httpd_log_t, httpd_log_t)
+read_lnk_files_pattern(httpd_rotatelogs_t, httpd_log_t, httpd_log_t)
+allow httpd_rotatelogs_t httpd_config_t:dir search_dir_perms;
 
 kernel_read_kernel_sysctls(httpd_rotatelogs_t)
 kernel_dontaudit_list_proc(httpd_rotatelogs_t)
@@ -1848,7 +1877,6 @@ tunable_policy(`httpd_use_openstack',`
 
 optional_policy(`
     tunable_policy(`httpd_use_opencryptoki',`
-        dev_rw_crypto(httpd_passwd_t)
         pkcs_manage_lock(httpd_passwd_t)
     ')
 ')

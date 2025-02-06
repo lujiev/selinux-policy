@@ -8,6 +8,7 @@ HOME_DIR/.maildir(/.*)?		gen_context(system_u:object_r:mail_home_rw_t,s0)
 
 /etc/aliases		--	gen_context(system_u:object_r:etc_aliases_t,s0)
 /etc/aliases\.db	--	gen_context(system_u:object_r:etc_aliases_t,s0)
+/etc/aliases\.lmdb	--	gen_context(system_u:object_r:etc_aliases_t,s0)
 /etc/mail(/.*)?			gen_context(system_u:object_r:etc_mail_t,s0)
 /etc/mail/aliases.*	--	gen_context(system_u:object_r:etc_aliases_t,s0)
 /etc/mail/.*\.db	--	gen_context(system_u:object_r:etc_aliases_t,s0)
@@ -15,6 +16,7 @@ ifdef(`distro_redhat',`
 /etc/postfix/aliases.*		gen_context(system_u:object_r:etc_aliases_t,s0)
 ')
 
+/var/cache/ddclient/\.esmtp_queue(/.*)?	gen_context(system_u:object_r:mail_home_rw_t,s0)
 /var/lib/arpwatch/\.esmtp_queue(/.*)?	gen_context(system_u:object_r:mail_home_rw_t,s0)
 
 /root/\.forward		--	gen_context(system_u:object_r:mail_home_t,s0)
@@ -28,10 +30,17 @@ ifdef(`distro_redhat',`
 /usr/bin/esmtp-wrapper		-- gen_context(system_u:object_r:sendmail_exec_t,s0)
 /usr/lib/sendmail	--	gen_context(system_u:object_r:sendmail_exec_t,s0)
 
-/usr/sbin/rmail			--	gen_context(system_u:object_r:sendmail_exec_t,s0)
-/usr/sbin/sendmail\.postfix	--	gen_context(system_u:object_r:sendmail_exec_t,s0)
-/usr/sbin/sendmail(\.sendmail)?	--	gen_context(system_u:object_r:sendmail_exec_t,s0)
-/usr/sbin/ssmtp 		--	gen_context(system_u:object_r:sendmail_exec_t,s0)
+# msmtp
+/usr/bin/msmtp		-- gen_context(system_u:object_r:sendmail_exec_t,s0)
+/usr/bin/msmtpd		-- gen_context(system_u:object_r:sendmail_exec_t,s0)
+
+# opensmtpd
+/usr/bin/smtpd		-- gen_context(system_u:object_r:sendmail_exec_t,s0)
+
+/usr/bin/rmail			--	gen_context(system_u:object_r:sendmail_exec_t,s0)
+/usr/bin/sendmail\.postfix	--	gen_context(system_u:object_r:sendmail_exec_t,s0)
+/usr/bin/sendmail(\.sendmail)?	--	gen_context(system_u:object_r:sendmail_exec_t,s0)
+/usr/bin/ssmtp 		--	gen_context(system_u:object_r:sendmail_exec_t,s0)
 
 /var/mail(/.*)?			gen_context(system_u:object_r:mail_spool_t,s0)
 

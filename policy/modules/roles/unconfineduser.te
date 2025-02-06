@@ -91,9 +91,9 @@ logging_send_syslog_msg(unconfined_t)
 
 mount_entry_type(unconfined_t)
 
-systemd_config_all_services(unconfined_t)
+sudo_filetrans_named_content_log(unconfined_t)
 
-ssh_dyntransition_to(unconfined_t)
+systemd_config_all_services(unconfined_t)
 
 unconfined_domain_noaudit(unconfined_t)
 domain_named_filetrans(unconfined_t)
@@ -115,6 +115,7 @@ tunable_policy(`selinuxuser_execmod',`
 
 tunable_policy(`unconfined_login',`
 	corecmd_shell_domtrans(unconfined_login_domain,unconfined_t)
+	ssh_dyntransition_to(unconfined_t)
 	allow unconfined_t unconfined_login_domain:fd use;
 	allow unconfined_t unconfined_login_domain:fifo_file rw_file_perms;
 	allow unconfined_t unconfined_login_domain:process sigchld;
@@ -150,6 +151,10 @@ optional_policy(`
 		devicekit_dbus_chat(unconfined_t)
 		devicekit_dbus_chat_disk(unconfined_t)
 		devicekit_dbus_chat_power(unconfined_t)
+	')
+
+	optional_policy(`
+		gpg_filetrans_admin_home_content(unconfined_t)
 	')
 
     optional_policy(`
@@ -210,6 +215,7 @@ optional_policy(`
 ')
 
 optional_policy(`
+	chrome_filetrans_home_content(unconfined_t)
 	chrome_role_notrans(unconfined_r, unconfined_t)
 
 	tunable_policy(`unconfined_chrome_sandbox_transition',`
@@ -344,6 +350,10 @@ optional_policy(`
 ')
 
 optional_policy(`
+	insights_client_filetrans_named_content(unconfined_t)
+')
+
+optional_policy(`
 	ipa_run_helper(unconfined_t, unconfined_r)
 ')
 
@@ -384,6 +394,10 @@ optional_policy(`
 
 optional_policy(`
 	tlp_filetrans_named_content(unconfined_t)
+')
+
+optional_policy(`
+	targetcli_filetrans_admin_home_content(unconfined_t)
 ')
 
 optional_policy(`

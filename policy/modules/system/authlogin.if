@@ -1309,6 +1309,25 @@ interface(`auth_manage_pam_pid',`
 
 ########################################
 ## <summary>
+##	Write to /run/motd files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`auth_write_motd_var_run_files',`
+	gen_require(`
+		type motd_var_run_t;
+	')
+
+	files_search_pids($1)
+	write_files_pattern($1, motd_var_run_t, motd_var_run_t)
+')
+
+########################################
+## <summary>
 ##	Execute pam_console with a domain transition.
 ## </summary>
 ## <param name="domain">
@@ -2289,6 +2308,24 @@ interface(`auth_read_passwd_file',`
 	')
 
 	allow $1 passwd_file_t:file read_file_perms;
+')
+
+########################################
+## <summary>
+##	Dontaudit reading the passwd passwords file
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`auth_dontaudit_read_passwd_file',`
+	gen_require(`
+		type passwd_file_t;
+	')
+
+	dontaudit $1 passwd_file_t:file { getattr open read };
 ')
 
 ########################################

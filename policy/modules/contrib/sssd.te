@@ -21,6 +21,13 @@ gen_tunable(sssd_access_kernel_keys, false)
 ## </desc>
 gen_tunable(sssd_connect_all_unreserved_ports, false)
 
+## <desc>
+## <p>
+##	Allow sssd use usb devices
+## </p>
+## </desc>
+gen_tunable(sssd_use_usb, false)
+
 type sssd_t;
 type sssd_exec_t;
 init_daemon_domain(sssd_t, sssd_exec_t)
@@ -61,6 +68,7 @@ role system_r types sssd_selinux_manager_t;
 allow sssd_t self:capability { dac_override ipc_lock chown dac_read_search  kill net_admin sys_nice fowner setgid setuid sys_admin sys_resource };
 allow sssd_t self:process { setfscreate setsched sigkill signal getsched setrlimit setpgid setcap};
 allow sssd_t self:fifo_file rw_fifo_file_perms;
+allow sssd_t self:io_uring sqpoll;
 allow sssd_t self:key manage_key_perms;
 allow sssd_t self:unix_stream_socket { create_stream_socket_perms connectto };
 
@@ -68,6 +76,7 @@ allow sssd_t self:unix_stream_socket { create_stream_socket_perms connectto };
 allow sssd_t sssd_exec_t:file execute_no_trans;
 
 read_files_pattern(sssd_t, sssd_conf_t, sssd_conf_t)
+read_lnk_files_pattern(sssd_t, sssd_conf_t, sssd_conf_t)
 list_dirs_pattern(sssd_t, sssd_conf_t, sssd_conf_t)
 
 manage_dirs_pattern(sssd_t, sssd_public_t, sssd_public_t)
@@ -92,7 +101,9 @@ manage_dirs_pattern(sssd_t, sssd_var_run_t, sssd_var_run_t)
 manage_files_pattern(sssd_t, sssd_var_run_t, sssd_var_run_t)
 manage_sock_files_pattern(sssd_t, sssd_var_run_t, sssd_var_run_t)
 files_pid_filetrans(sssd_t, sssd_var_run_t, { file dir sock_file })
+allow sssd_t sssd_var_run_t:file map;
 
+kernel_io_uring_use(sssd_t)
 kernel_read_network_state(sssd_t)
 kernel_read_system_state(sssd_t)
 kernel_request_load_module(sssd_t)
@@ -109,7 +120,6 @@ corecmd_exec_bin(sssd_t)
 
 dev_read_urand(sssd_t)
 dev_read_sysfs(sssd_t)
-dev_rw_crypto(sssd_t)
 
 domain_read_all_domains_state(sssd_t)
 domain_obj_id_change_exemption(sssd_t)
@@ -181,13 +191,35 @@ tunable_policy(`sssd_connect_all_unreserved_ports',`
 	corenet_tcp_connect_all_unreserved_ports(sssd_t)
 ')
 
+tunable_policy(`sssd_use_usb',`
+	dev_rw_generic_usb_dev(sssd_t)
+')
+
+optional_policy(`
+	tunable_policy(`sssd_use_usb',`
+		ipa_domtrans_otpd(sssd_t)
+	')
+')
+
+optional_policy(`
+	accountsd_read_fifo_file(sssd_t)
+')
+
 optional_policy(`
     bind_read_cache(sssd_t)
 ')
 
 optional_policy(`
+	cloudform_rw_pipes(sssd_t)
+')
+
+optional_policy(`
 	dbus_system_bus_client(sssd_t)
 	dbus_connect_system_bus(sssd_t)
+
+	optional_policy(`
+		cron_dbus_chat_system_job(sssd_t)
+	')
 ')
 
 optional_policy(`
@@ -208,6 +240,10 @@ optional_policy(`
 
 optional_policy(`
 	ica_rw_map_tmpfs_files(sssd_t)
+')
+
+optional_policy(`
+	ipa_sigkill_otpd(sssd_t)
 ')
 
 optional_policy(`
@@ -252,6 +288,7 @@ allow sssd_t sssd_selinux_manager_t:process signal;
 
 allow sssd_selinux_manager_t self:capability { setgid setuid };
 dontaudit sssd_selinux_manager_t self:capability net_admin;
+allow sssd_selinux_manager_t self:process setcap;
 
 domtrans_pattern(sssd_t, sssd_selinux_manager_exec_t, sssd_selinux_manager_t)
 

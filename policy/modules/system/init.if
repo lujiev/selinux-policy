@@ -250,6 +250,10 @@ interface(`init_daemon_domain',`
 		type_transition direct_run_init $2:process $1;
 		typeattribute $1 direct_init;
 	')
+
+	optional_policy(`
+		systemd_connectto_socket_proxyd_unix_sockets($1)
+	')
 ')
 
 #######################################
@@ -449,6 +453,35 @@ interface(`init_ranged_system_domain',`
 	')
 ')
 
+########################################
+## <summary>
+##	Create a domain which can be started by init
+##	using an explicit transition.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Type to be used as a domain.
+##	</summary>
+## </param>
+## <param name="entry_point">
+##	<summary>
+##	Type of the program to be used as an entry point to this domain.
+##	</summary>
+## </param>
+#
+interface(`init_explicit_domain',`
+	gen_require(`
+		type init_t;
+		role system_r;
+	')
+
+	role system_r types $1;
+
+	domain_type($1)
+	domain_entry_file($1, $2)
+	domain_transition_pattern(init_t, $2, $1)
+')
+
 ######################################
 ## <summary>
 ##  Allow domain dyntransition to init_t domain.
@@ -460,11 +493,12 @@ interface(`init_ranged_system_domain',`
 ## </param>
 #
 interface(`init_dyntrans',`
-    gen_require(`
-        type init_t;
-    ')
+	gen_require(`
+		type init_t;
+	')
 
-    dyntrans_pattern($1, init_t)
+	dyntrans_pattern($1, init_t)
+	domain_dyntrans_type($1)
 ')
 
 ########################################
@@ -1182,6 +1216,32 @@ interface(`init_domtrans_script',`
 
 ########################################
 ## <summary>
+##	Execute init scripts with a domain transition
+##	and allow the specified role the init script type
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed to transition.
+##	</summary>
+## </param>
+## <param name="role">
+##	<summary>
+##	Role allowed access.
+##	</summary>
+## </param>
+## <rolecap/>
+#
+interface(`init_run_script',`
+	gen_require(`
+		type initrc_t;
+	')
+
+	init_domtrans_script($1)
+	role $2 types initrc_t;
+')
+
+########################################
+## <summary>
 ##	Execute a file in a bin directory
 ##	in the initrc_t domain 
 ## </summary>
@@ -1423,7 +1483,7 @@ interface(`init_write_key',`
 		type init_t;
 	')
 
-	allow $1 init_t:key read;
+	allow $1 init_t:key write;
 ')
 
 ########################################
@@ -1615,6 +1675,25 @@ interface(`init_read_all_script_files',`
 
 	files_search_etc($1)
 	allow $1 init_script_file_type:file read_file_perms;
+')
+
+########################################
+## <summary>
+##	Get the status all init script files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`init_status_all_script_files',`
+	gen_require(`
+		attribute init_script_file_type;
+	')
+
+	files_search_etc($1)
+	allow $1 init_script_file_type:service status;
 ')
 
 #######################################
@@ -1941,6 +2020,7 @@ interface(`init_dbus_send_script',`
 	')
 
 	allow $1 initrc_t:dbus send_msg;
+	allow initrc_t $1:dbus send_msg;
 ')
 
 ########################################
@@ -2595,6 +2675,42 @@ interface(`init_watch_pid_dir',`
     allow $1 init_var_run_t:dir watch_dir_perms;
 ')
 
+########################################
+## <summary>
+##      Get the attributes of block nodes in the /run/systemd directory.
+## </summary>
+## <param name="domain">
+##      <summary>
+##      Domain allowed access.
+##      </summary>
+## </param>
+#
+interface(`init_getattr_pid_blk_file',`
+        gen_require(`
+                type init_var_run_t;
+        ')
+
+        allow $1 init_var_run_t:blk_file getattr;
+')
+
+########################################
+## <summary>
+##      Get the attributes of character device nodes in the /run/systemd directory.
+## </summary>
+## <param name="domain">
+##      <summary>
+##      Domain allowed access.
+##      </summary>
+## </param>
+#
+interface(`init_getattr_pid_chr_file',`
+        gen_require(`
+                type init_var_run_t;
+        ')
+
+        allow $1 init_var_run_t:chr_file getattr;
+')
+
 #######################################
 ## <summary>
 ##  Create objects in /run/systemd directory
@@ -2998,6 +3114,27 @@ interface(`init_rw_tcp_sockets',`
     ')
 
     allow $1 init_t:tcp_socket { read write getattr };
+')
+
+#######################################
+## <summary>
+##	Use sd_notify
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`init_use_notify',`
+	gen_require(`
+		type init_t, init_var_run_t;
+	')
+
+	files_search_pids($1)
+	stream_connect_pattern($1, init_var_run_t, init_var_run_t, init_t)
+	allow $1 init_var_run_t:sock_file read_sock_file_perms;
+	allow init_t $1:fifo_file write_fifo_file_perms;
 ')
 
 ########################################

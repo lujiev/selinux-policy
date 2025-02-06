@@ -634,6 +634,25 @@ interface(`sysnet_manage_config_dirs',`
 	manage_dirs_pattern($1, net_conf_t, net_conf_t)
 ')
 
+########################################
+## <summary>
+##	Create, read, write and delete 
+##      network config pipes.
+## </summary>
+## <param name="domain">
+## <summary>
+##	Domain allowed access.
+## </summary>
+## </param>
+#
+interface(`sysnet_manage_config_pipes',`
+	gen_require(`
+		type net_conf_t;
+	')
+
+	manage_fifo_files_pattern($1, net_conf_t, net_conf_t)
+')
+
 #######################################
 ## <summary>
 ##	Read the dhcp client pid file.
@@ -1140,6 +1159,7 @@ interface(`sysnet_filetrans_systemd_resolved',`
 	')
 
 	optional_policy(`
+		systemd_resolved_pid_filetrans($1, net_conf_t, file, "no-stub-resolv.conf")
 		systemd_resolved_pid_filetrans($1, net_conf_t, file, "resolv.conf")
 		systemd_resolved_pid_filetrans($1, net_conf_t, file, "resolv.conf.tmp")
 		systemd_resolved_pid_filetrans($1, net_conf_t, { file lnk_file }, "stub-resolv.conf")
@@ -1177,6 +1197,7 @@ interface(`sysnet_filetrans_named_content',`
 	init_pid_filetrans($1, net_conf_t, dir, "network")
 
 	optional_policy(`
+		networkmanager_pid_filetrans($1, net_conf_t, file, "no-stub-resolv.conf")
 		networkmanager_pid_filetrans($1, net_conf_t, file, "resolv.conf")
 		networkmanager_pid_filetrans($1, net_conf_t, file, "resolv.conf.tmp")
 	')
@@ -1202,6 +1223,44 @@ interface(`sysnet_manage_ifconfig_run',`
 	manage_files_pattern($1, ifconfig_var_run_t, ifconfig_var_run_t)
 	manage_dirs_pattern($1, ifconfig_var_run_t, ifconfig_var_run_t)
 	manage_lnk_files_pattern($1, ifconfig_var_run_t, ifconfig_var_run_t)
+')
+
+######################################
+## <summary>
+##	Watch ifconfig_var_run_t directories
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`sysnet_watch_ifconfig_run_dirs',`
+	gen_require(`
+		type ifconfig_var_run_t;
+	')
+
+	watch_dirs_pattern($1, ifconfig_var_run_t, ifconfig_var_run_t)
+')
+
+########################################
+## <summary>
+##	Read ifconfig_var_run_t files and link files
+## </summary>
+## <param name="domain">
+##	<summary>
+##      Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`sysnet_read_ifconfig_run_files',`
+	gen_require(`
+		type ifconfig_var_run_t;
+	')
+
+	list_dirs_pattern($1, ifconfig_var_run_t, ifconfig_var_run_t)
+	read_files_pattern($1, ifconfig_var_run_t, ifconfig_var_run_t)
+	read_lnk_files_pattern($1, ifconfig_var_run_t, ifconfig_var_run_t)
 ')
 
 ########################################

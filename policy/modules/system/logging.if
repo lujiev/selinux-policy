@@ -756,6 +756,24 @@ interface(`logging_relabel_syslog_pid_socket',`
 
 ########################################
 ## <summary>
+##      Allow domain to write the syslog pid sock_file.
+## </summary>
+## <param name="domain">
+##      <summary>
+##      Domain allowed access.
+##      </summary>
+## </param>
+#
+interface(`logging_write_syslog_pid_socket',`
+	gen_require(`
+		type syslogd_var_run_t;
+	')
+
+	write_sock_files_pattern($1, syslogd_var_run_t, syslogd_var_run_t)
+')
+
+########################################
+## <summary>
 ##	Connect to the syslog control unix stream socket.
 ## </summary>
 ## <param name="domain">
@@ -1202,6 +1220,42 @@ interface(`logging_manage_all_logs',`
 	manage_files_pattern($1, logfile, logfile)
 	manage_lnk_files_pattern($1, logfile, logfile)
     allow $1 logfile:file map;
+')
+
+#######################################
+## <summary>
+##	Watch all log directories.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`logging_watch_all_log_dirs',`
+	gen_require(`
+		attribute logfile;
+	')
+
+	allow $1 logfile:dir { search_dir_perms watch_dir_perms };
+')
+
+#######################################
+## <summary>
+##	Watch all log files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`logging_watch_all_log_files',`
+	gen_require(`
+		attribute logfile;
+	')
+
+	allow $1 logfile:file watch_file_perms;
 ')
 
 #######################################
@@ -1754,6 +1808,24 @@ interface(`logging_mmap_journal',`
 
 #######################################
 ## <summary>
+##	Write to files in /run/log/journal/ directory.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`logging_write_journal_files',`
+	gen_require(`
+		type syslogd_var_run_t;
+	')
+
+	allow $1 syslogd_var_run_t:file { setattr write };
+')
+
+#######################################
+## <summary>
 ##	Watch the /run/log/journal directory.
 ## </summary>
 ## <param name="domain">
@@ -1787,4 +1859,22 @@ interface(`logging_dgram_send',`
 	')
 
 	allow $1 syslogd_t:unix_dgram_socket sendto;
+')
+
+#######################################
+## <summary>
+##	Use file descriptors from syslogd.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`logging_fd_use',`
+	gen_require(`
+		type syslogd_t;
+	')
+
+	allow $1 syslogd_t:fd use;
 ')

@@ -348,6 +348,34 @@ interface(`domain_cron_exemption_target',`
 ########################################
 ## <summary>
 ##	Inherit and use file descriptors from
+##	all domains.
+## </summary>
+## <desc>
+##	<p>
+##	Allow the specified domain to inherit and use file
+##	descriptors from all domains.  This does not allow
+##	access to the objects being referenced by the file
+##	descriptors.
+##	</p>
+## </desc>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+## <infoflow type="read" weight="1"/>
+#
+interface(`domain_use_all_fds',`
+	gen_require(`
+		attribute domain;
+	')
+
+	allow $1 domain:fd use;
+')
+
+########################################
+## <summary>
+##	Inherit and use file descriptors from
 ##	domains with interactive programs.
 ## </summary>
 ## <desc>
@@ -566,6 +594,25 @@ interface(`domain_kill_all_domains',`
 
 	allow $1 domain:process sigkill;
 	allow $1 self:capability kill;
+')
+
+########################################
+## <summary>
+##	Allow unix_read all domains semaphores
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+## <rolecap/>
+#
+interface(`domain_unix_read_all_semaphores',`
+	gen_require(`
+		attribute domain;
+	')
+
+	allow $1 domain:sem unix_read;
 ')
 
 ########################################
@@ -1062,6 +1109,24 @@ interface(`domain_getattr_all_sockets',`
 
 ########################################
 ## <summary>
+##	Read/write all domains sockets, for all socket types.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`domain_rw_all_sockets',`
+	gen_require(`
+		attribute domain;
+	')
+
+	allow $1 domain:socket_class_set { rw_stream_socket_perms };
+')
+
+########################################
+## <summary>
 ##	Do not audit attempts to get the attributes
 ##	of all domains sockets, for all socket types.
 ## </summary>
@@ -1277,6 +1342,24 @@ interface(`domain_dontaudit_getattr_all_stream_sockets',`
 	')
 
 	dontaudit $1 domain:unix_stream_socket getattr;
+')
+
+########################################
+## <summary>
+##	Connect to all domains unix stream sockets.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`domain_connect_all_stream_sockets',`
+	gen_require(`
+		attribute domain;
+	')
+
+	allow $1 domain:unix_stream_socket connectto;
 ')
 
 ########################################

@@ -83,6 +83,7 @@ type ssh_exec_t;
 typealias ssh_t alias { user_ssh_t staff_ssh_t sysadm_ssh_t };
 typealias ssh_t alias { auditadm_ssh_t secadm_ssh_t };
 userdom_user_application_domain(ssh_t, ssh_exec_t)
+role system_r types ssh_t;
 
 type ssh_agent_exec_t;
 corecmd_executable_file(ssh_agent_exec_t)
@@ -91,6 +92,7 @@ type ssh_agent_tmp_t;
 typealias ssh_agent_tmp_t alias { user_ssh_agent_tmp_t staff_ssh_agent_tmp_t sysadm_ssh_agent_tmp_t };
 typealias ssh_agent_tmp_t alias { auditadm_ssh_agent_tmp_t secadm_ssh_agent_tmp_t };
 userdom_user_tmp_file(ssh_agent_tmp_t)
+userdom_user_tmp_filetrans(ssh_agent_type, ssh_agent_tmp_t, sock_file)
 
 type ssh_keysign_t;
 type ssh_keysign_exec_t;
@@ -164,7 +166,10 @@ read_lnk_files_pattern(ssh_t, ssh_home_t, ssh_home_t)
 manage_dirs_pattern(ssh_server, ssh_home_t, ssh_home_t)
 manage_files_pattern(ssh_server, ssh_home_t, ssh_home_t)
 
+kernel_read_device_sysctls(ssh_t)
 kernel_read_kernel_sysctls(ssh_t)
+kernel_read_net_sysctls(ssh_t)
+kernel_read_network_state_symlinks(ssh_t)
 kernel_read_system_state(ssh_t)
 
 corenet_all_recvfrom_netlabel(ssh_t)
@@ -180,6 +185,7 @@ corenet_rw_tun_tap_dev(ssh_t)
 
 dev_read_rand(ssh_t)
 dev_read_urand(ssh_t)
+dev_read_sysfs(ssh_t)
 
 fs_getattr_all_fs(ssh_t)
 fs_search_auto_mountpoints(ssh_t)
@@ -204,6 +210,7 @@ term_use_ptmx(ssh_t)
 auth_use_nsswitch(ssh_t)
 
 miscfiles_read_generic_certs(ssh_t)
+miscfiles_read_hwdata(ssh_t)
 
 seutil_read_config(ssh_t)
 
@@ -238,6 +245,16 @@ ifdef(`enable_mcs',`
 ')
 
 optional_policy(`
+	dbus_write_session_tmp_sock_files(ssh_t)
+	dbus_stream_connect_session_bus(ssh_t)
+')
+
+optional_policy(`
+	gnome_read_generic_cache_files(ssh_t)
+	gnome_map_generic_cache_files(ssh_t)
+	gnome_read_home_config(ssh_t)
+	gnome_map_home_config_file(ssh_t)
+	gnome_watch_home_config_dirs(ssh_t)
 	gnome_stream_connect_gkeyringd(ssh_t)
 ')
 
@@ -246,12 +263,22 @@ optional_policy(`
 ')
 
 optional_policy(`
+	kerberos_read_home_content(ssh_t)
 	kerberos_read_keytab(ssh_t)
+')
+
+optional_policy(`
+	systemd_read_conf_files(ssh_t)
+')
+
+optional_policy(`
+	virt_virtqemud_ioctl_stream_sockets(ssh_t)
 ')
 
 optional_policy(`
 	xserver_user_x_domain_template(ssh, ssh_t, ssh_tmpfs_t)
 	xserver_domtrans_xauth(ssh_t)
+	xserver_map_user_fonts(ssh_t)
 ')
 
 
@@ -298,6 +325,7 @@ optional_policy(`
 allow sshd_t self:netlink_route_socket r_netlink_socket_perms;
 allow sshd_t self:key { search link write };
 allow sshd_t self:process setcurrent;
+allow sshd_t self:vsock_socket rw_socket_perms;
 
 allow sshd_t sshd_keytab_t:file read_file_perms;
 
@@ -340,7 +368,7 @@ tunable_policy(`ssh_sysadm_login',`
 	# display the tty.
 	# some versions of sshd on the new SE Linux require setattr
 	userdom_signal_all_users(sshd_t)
-	userdom_spec_domtrans_all_users(sshd_t)
+	userdom_spec_domtrans_admin_users(sshd_t)
 	userdom_dyntransition_admin_users(sshd_t)
 ')
 
@@ -510,6 +538,7 @@ allow sshd_keygen_t sshd_key_t:file manage_file_perms;
 
 kernel_read_system_state(sshd_keygen_t)
 kernel_dontaudit_request_load_module(sshd_keygen_t)
+kernel_stream_connect(sshd_keygen_t)
 
 corecmd_exec_bin(sshd_keygen_t)
 
@@ -620,11 +649,11 @@ logging_send_audit_msgs(sshd_sandbox_t)
 #  sshd [net] child local policy
 #
 
+allow sshd_net_t sshd_t:vsock_socket rw_socket_perms;
+
 allow sshd_t sshd_net_t:process signal;
 
 allow sshd_net_t self:process setrlimit;
-
-dev_rw_crypto(sshd_net_t)
 
 init_ioctl_stream_sockets(sshd_net_t)
 init_rw_tcp_sockets(sshd_net_t)
@@ -732,6 +761,10 @@ userdom_search_user_home_content(ssh_agent_type)
 
 optional_policy(`
     cockpit_rw_pipes(ssh_agent_type)
+')
+
+optional_policy(`
+	gnome_manage_generic_cache_files(ssh_agent_type)
 ')
 
 optional_policy(`

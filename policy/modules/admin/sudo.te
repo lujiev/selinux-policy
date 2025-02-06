@@ -25,6 +25,7 @@ manage_files_pattern(sudodomain, sudo_db_t, sudo_db_t)
 manage_dirs_pattern(sudodomain, sudo_log_t, sudo_log_t)
 manage_files_pattern(sudodomain, sudo_log_t, sudo_log_t)
 logging_log_filetrans(sudodomain, sudo_log_t, dir, "sudo-io")
+logging_log_filetrans(sudodomain, sudo_log_t, file, "sudo.log")
 
 ##############################
 #
@@ -69,6 +70,7 @@ domain_sigchld_interactive_fds(sudodomain)
 domain_getattr_all_entry_files(sudodomain)
 
 files_read_etc_files(sudodomain)
+files_list_var(sudodomain)
 files_read_var_files(sudodomain)
 files_read_usr_files(sudodomain)
 # for some PAM modules and for cwd
@@ -91,6 +93,7 @@ term_use_ptmx(sudodomain)
 # sudo stores a token in the pam_pid directory
 auth_manage_pam_pid(sudodomain)
 auth_manage_faillog(sudodomain)
+auth_read_var_auth(sudodomain)
 auth_rw_lastlog(sudodomain)
 
 application_signal(sudodomain)
@@ -108,6 +111,9 @@ userdom_manage_user_home_content_symlinks(sudodomain)
 userdom_manage_user_tmp_files(sudodomain)
 userdom_manage_user_tmp_symlinks(sudodomain)
 userdom_use_user_terminals(sudodomain)
+userdom_create_user_pty(sudodomain)
+userdom_setattr_user_ptys(sudodomain)
+userdom_setattr_user_ttys(sudodomain)
 userdom_signal_all_users(sudodomain)
 userdom_exec_user_home_content_files(sudodomain)
 # for some PAM modules and for cwd

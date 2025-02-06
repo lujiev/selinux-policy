@@ -90,12 +90,14 @@ manage_files_pattern(setroubleshootd_t, setroubleshoot_var_run_t, setroubleshoot
 manage_sock_files_pattern(setroubleshootd_t, setroubleshoot_var_run_t, setroubleshoot_var_run_t)
 files_pid_filetrans(setroubleshootd_t, setroubleshoot_var_run_t, { file sock_file dir })
 
-
+kernel_getattr_all_sysctls(setroubleshootd_t)
+kernel_io_uring_use(setroubleshootd_t)
 kernel_read_kernel_sysctls(setroubleshootd_t)
 kernel_read_system_state(setroubleshootd_t)
 kernel_read_net_sysctls(setroubleshootd_t)
 kernel_read_network_state(setroubleshootd_t)
 kernel_dontaudit_list_all_proc(setroubleshootd_t)
+kernel_read_device_sysctls(setroubleshootd_t)
 kernel_read_irq_sysctls(setroubleshootd_t)
 kernel_read_rpc_sysctls(setroubleshootd_t)
 kernel_read_unlabeled_state(setroubleshootd_t)
@@ -191,6 +193,10 @@ optional_policy(`
 	rpm_read_db(setroubleshootd_t)
 	rpm_dontaudit_manage_db(setroubleshootd_t)
 	rpm_use_script_fds(setroubleshootd_t)
+')
+
+optional_policy(`
+	sendmail_domtrans(setroubleshootd_t)
 ')
 
 ########################################

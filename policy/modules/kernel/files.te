@@ -80,6 +80,10 @@ files_ro_base_file(system_conf_t)
 # compatibility aliases for removed type:
 typealias system_conf_t alias iptables_conf_t;
 
+# mdevctl_conf_t is a type for files in /etc/mdevctl.d
+type mdevctl_conf_t, configfile;
+files_type(mdevctl_conf_t)
+
 # system_db_t is a new type of various
 # db files.
 type system_db_t;
@@ -223,7 +227,6 @@ allow file_type self:filesystem associate;
 fs_associate(file_type)
 fs_associate_noxattr(file_type)
 fs_associate_tmpfs(file_type)
-fs_associate_ramfs(file_type)
 fs_associate_hugetlbfs(file_type)
 
 ########################################
@@ -249,7 +252,8 @@ fs_associate_tmpfs(tmpfsfile)
 
 # Create/access any file in a labeled filesystem;
 allow files_unconfined_type file_type:{ file chr_file } ~{ execmod entrypoint };
-allow files_unconfined_type file_type:{ dir lnk_file sock_file fifo_file blk_file } *;
+allow files_unconfined_type file_type:dir ~map;
+allow files_unconfined_type file_type:{ lnk_file sock_file fifo_file blk_file } *;
 allow files_unconfined_type file_type:service *;
 
 # Mount/unmount any filesystem with the context= option.

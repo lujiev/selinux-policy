@@ -427,7 +427,7 @@ optional_policy(`
 #
 
 allow xdm_t self:capability { setgid setuid sys_resource kill sys_tty_config mknod chown dac_read_search dac_override fowner fsetid ipc_owner sys_nice sys_rawio net_bind_service net_admin sys_ptrace };
-allow xdm_t self:capability2 { block_suspend };
+allow xdm_t self:capability2 { block_suspend bpf };
 allow xdm_t self:cap_userns { dac_override kill net_admin setpcap sys_admin sys_ptrace };
 dontaudit xdm_t self:capability sys_admin;
 dontaudit xdm_t self:capability2 wake_alarm;
@@ -494,6 +494,7 @@ manage_files_pattern(xdm_t, xdm_tmpfs_t, xdm_tmpfs_t)
 manage_lnk_files_pattern(xdm_t, xdm_tmpfs_t, xdm_tmpfs_t)
 manage_fifo_files_pattern(xdm_t, xdm_tmpfs_t, xdm_tmpfs_t)
 manage_sock_files_pattern(xdm_t, xdm_tmpfs_t, xdm_tmpfs_t)
+#fs_tmpfs_filetrans(xdm_t, xdm_tmpfs_t, file)
 
 manage_files_pattern(xdm_t, user_fonts_t, user_fonts_t)
 
@@ -510,7 +511,7 @@ manage_sock_files_pattern(xdm_t, xdm_var_lib_t, xdm_var_lib_t)
 files_var_lib_filetrans(xdm_t, xdm_var_lib_t, { file dir })
 # Read machine-id
 files_read_var_lib_files(xdm_t)
-allow xdm_t xdm_var_lib_t:dir { map watch_dir_perms };
+allow xdm_t xdm_var_lib_t:dir watch_dir_perms;
 
 manage_dirs_pattern(xdm_t, xdm_var_run_t, xdm_var_run_t)
 manage_files_pattern(xdm_t, xdm_var_run_t, xdm_var_run_t)
@@ -561,11 +562,14 @@ kernel_mount_proc(xdm_t)
 kernel_read_system_state(xdm_t)
 kernel_read_device_sysctls(xdm_t)
 kernel_read_sysctl(xdm_t)
+kernel_read_fs_sysctls(xdm_t)
 kernel_read_kernel_sysctls(xdm_t)
 kernel_read_net_sysctls(xdm_t)
 kernel_read_network_state(xdm_t)
+kernel_read_vm_sysctls(xdm_t)
 kernel_request_load_module(xdm_t)
 kernel_stream_connect(xdm_t)
+kernel_read_key(xdm_t)
 kernel_view_key(xdm_t)
 
 corecmd_exec_shell(xdm_t)
@@ -598,6 +602,7 @@ dev_setattr_mouse_dev(xdm_t)
 dev_rw_apm_bios(xdm_t)
 dev_rw_input_dev(xdm_t)
 dev_setattr_apm_bios_dev(xdm_t)
+dev_rw_dma_dev(xdm_t)
 dev_rw_dri(xdm_t)
 dev_rw_agp(xdm_t)
 dev_rw_wireless(xdm_t)
@@ -670,6 +675,10 @@ fs_manage_cgroup_dirs(xdm_t)
 fs_manage_cgroup_files(xdm_t)
 fs_getattr_nsfs_files(xdm_t)
 
+# memfd objects created by gnome-shell
+fs_map_tmpfs_files(xdm_t)
+fs_rw_tmpfs_files(xdm_t)
+
 miscfiles_watch_fonts_dirs(xdm_t)
 
 mount_read_pid_files(xdm_t)
@@ -691,7 +700,8 @@ storage_dontaudit_raw_read_removable_device(xdm_t)
 storage_dontaudit_raw_write_removable_device(xdm_t)
 storage_dontaudit_setattr_removable_dev(xdm_t)
 storage_dontaudit_rw_scsi_generic(xdm_t)
-storage_dontaudit_rw_fuse(xdm_t)
+#storage_dontaudit_rw_fuse(xdm_t)
+storage_rw_fuse(xdm_t)
 
 term_mount_pty_fs(xdm_t)
 term_setattr_console(xdm_t)
@@ -731,6 +741,10 @@ miscfiles_read_hwdata(xdm_t)
 miscfiles_map_generic_certs(xdm_t)
 miscfiles_read_certs(xdm_t)
 
+mount_watch_pid_dirs(xdm_t)
+mount_watch_pid_files(xdm_t)
+mount_watch_reads_pid_files(xdm_t)
+
 systemd_write_inhibit_pipes(xdm_t)
 systemd_dbus_chat_localed(xdm_t)
 systemd_dbus_chat_hostnamed(xdm_t)
@@ -755,6 +769,7 @@ userdom_manage_user_tmp_sockets(xdm_t)
 userdom_manage_tmp_role(system_r, xdm_t)
 userdom_mounton_tmp_sockets(xdm_t)
 userdom_nnp_transition_login_userdomain(xdm_t)
+userdom_watch_user_home_dirs(xdm_t)
 
 #userdom_home_manager(xdm_t)
 tunable_policy(`xdm_write_home',`
@@ -792,6 +807,10 @@ tunable_policy(`use_ecryptfs_home_dirs',`
 
 ### filename transitions ###
 userdom_filetrans_generic_home_content(xdm_t)
+
+optional_policy(`
+	alsa_read_lib(xdm_t)
+')
 
 optional_policy(`
     dbus_exec_dbusd(xdm_t)
@@ -866,6 +885,10 @@ optional_policy(`
 
 optional_policy(`
     remotelogin_signull(xdm_t)
+')
+
+optional_policy(`
+	rpm_dbus_chat(xdm_t)
 ')
 
 optional_policy(`
@@ -1036,6 +1059,15 @@ optional_policy(`
 	gnome_read_gconf_config(xdm_t)
 	gnome_transition_gkeyringd(xdm_t)
 	gnome_cache_filetrans(xdm_t, xdm_home_t, dir, "gdm")
+	gnome_initial_setup_domtrans(xdm_t)
+	gnome_initial_setup_filetrans_named_content(xdm_t)
+	gnome_initial_setup_create_var_lib_dirs(xdm_t)
+	gnome_initial_setup_manage_var_lib_files(xdm_t)
+	gnome_initial_setup_manage_var_lib_sock_files(xdm_t)
+	gnome_initial_setup_manage_var_run(xdm_t)
+	gnome_initial_setup_noatsecure(xdm_t)
+	gnome_initial_setup_read_state(xdm_t)
+	gnome_initial_setup_write_fifo_files(xdm_t)
 ')
 
 optional_policy(`
@@ -1085,11 +1117,6 @@ optional_policy(`
 	resmgr_stream_connect(xdm_t)
 ')
 
-optional_policy(`
-    rhev_stream_connect_agentd(xdm_t)
-	rhev_read_pid_files_agentd(xdm_t)
-')
-
 # On crash gdm execs gdb to dump stack
 optional_policy(`
 	rpm_exec(xdm_t)
@@ -1120,6 +1147,12 @@ optional_policy(`
 
 optional_policy(`
     sssd_read_pid_files(xdm_t)
+')
+
+optional_policy(`
+    systemd_homed_write_pid_sock_files(xdm_t)
+    systemd_homed_write_pipes(xdm_t)
+    systemd_homed_dbus_chat(xdm_t)
 ')
 
 optional_policy(`
@@ -1310,7 +1343,6 @@ files_dontaudit_search_pids(xserver_t)
 fs_getattr_xattr_fs(xserver_t)
 fs_search_nfs(xserver_t)
 fs_search_auto_mountpoints(xserver_t)
-fs_search_ramfs(xserver_t)
 
 mls_file_read_to_clearance(xserver_t)
 mls_file_write_all_levels(xserver_t)
@@ -1714,7 +1746,6 @@ allow x_userdomain user_fonts_config_t:file read_file_perms;
 
 manage_dirs_pattern(x_userdomain, user_fonts_cache_t, user_fonts_cache_t)
 manage_files_pattern(x_userdomain, user_fonts_cache_t, user_fonts_cache_t)
-allow x_userdomain user_fonts_cache_t:dir map;
 
 stream_connect_pattern(x_userdomain, xserver_tmp_t, xserver_tmp_t, xserver_t)
 allow x_userdomain xserver_tmp_t:sock_file delete_sock_file_perms;
@@ -1800,7 +1831,7 @@ term_use_virtio_console(x_userdomain)
 # Client write xserver shm
 tunable_policy(`xserver_clients_write_xshm',`
 	allow x_userdomain xserver_t:shm rw_shm_perms;
-	allow x_userdomain xserver_tmpfs_t:file rw_file_perms;
+	allow x_userdomain xserver_tmpfs_t:file mmap_rw_file_perms;
 ')
 
 optional_policy(`
@@ -1819,12 +1850,14 @@ optional_policy(`
 	thumb_nnp_domtrans(x_userdomain)
 ')
 
-optional_policy(`
-        timedatex_dbus_chat(x_userdomain)
-')
-
 tunable_policy(`selinuxuser_direct_dri_enabled',`
 	dev_rw_dri(dridomain)
 ',`
 	dev_dontaudit_rw_dri(dridomain)
+')
+
+#============= xdm_t ==============
+optional_policy(`
+	gnome_remote_desktop_rw_tcp_sockets(xdm_t)
+	dev_rw_dma_dev(xdm_t)
 ')

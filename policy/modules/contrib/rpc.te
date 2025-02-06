@@ -161,6 +161,7 @@ kernel_write_proc_files(rpcd_t)
 kernel_read_network_state(rpcd_t)
 # for rpc.rquotad
 kernel_read_sysctl(rpcd_t)
+kernel_read_net_sysctls(rpcd_t)
 kernel_rw_fs_sysctls(rpcd_t)
 kernel_dontaudit_getattr_core_if(rpcd_t)
 kernel_signal(rpcd_t)
@@ -241,6 +242,7 @@ allow nfsd_t self:capability { dac_read_search dac_override sys_admin sys_chroot
 allow nfsd_t self:process { setcap };
 
 allow nfsd_t exports_t:file read_file_perms;
+allow nfsd_t exports_t:dir list_dir_perms;
 
 manage_dirs_pattern(nfsd_t, nfsd_tmp_t, nfsd_tmp_t)
 manage_files_pattern(nfsd_t, nfsd_tmp_t, nfsd_tmp_t)
@@ -256,6 +258,7 @@ kernel_dontaudit_getattr_core_if(nfsd_t)
 kernel_dontaudit_setsched(nfsd_t)
 kernel_request_load_module(nfsd_t)
 kernel_mounton_proc(nfsd_t)
+kernel_read_net_sysctls(nfsd_t)
 kernel_rw_rpc_sysctls_dirs(nfsd_t)
 kernel_create_rpc_sysctls(nfsd_t)
 kernel_rw_fs_sysctls(nfsd_t)
@@ -369,7 +372,7 @@ kernel_read_system_state(gssd_t)
 kernel_read_network_state(gssd_t)
 kernel_read_network_state_symlinks(gssd_t)
 kernel_request_load_module(gssd_t)
-kernel_search_network_sysctl(gssd_t)
+kernel_read_net_sysctls(gssd_t)
 kernel_signal(gssd_t)
 
 corecmd_exec_bin(gssd_t)
@@ -433,4 +436,49 @@ optional_policy(`
 
 optional_policy(`
 	xserver_rw_xdm_tmp_files(gssd_t)
+')
+
+########################################
+#
+# nfsidmap policy
+#
+
+type nfsidmap_exec_t;
+files_type(nfsidmap_exec_t)
+
+type nfsidmap_t;
+domain_type(nfsidmap_t)
+domain_entry_file(nfsidmap_t, nfsidmap_exec_t)
+role system_r types nfsidmap_t;
+
+allow nfsidmap_t self:key write;
+allow nfsidmap_t self:netlink_route_socket r_netlink_socket_perms;
+allow nfsidmap_t self:udp_socket create_socket_perms;
+
+kernel_setattr_key(nfsidmap_t)
+
+init_stream_connectto(nfsidmap_t)
+
+sysnet_read_config(nfsidmap_t)
+
+optional_policy(`
+	auth_read_passwd(nfsidmap_t)
+')
+
+optional_policy(`
+	logging_send_syslog_msg(nfsidmap_t)
+')
+
+optional_policy(`
+	# /etc/request-key.d/id_resolver.conf
+	keyutils_request_domtrans_to(nfsidmap_t, nfsidmap_exec_t)
+')
+
+optional_policy(`
+	systemd_machined_stream_connect(nfsidmap_t)
+	systemd_userdbd_stream_connect(nfsidmap_t)
+')
+
+optional_policy(`
+	systemd_homed_stream_connect(nfsidmap_t)
 ')

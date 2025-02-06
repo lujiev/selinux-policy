@@ -1100,4 +1100,10 @@ class io_uring
 {
     override_creds
     sqpoll
+    cmd
+}
+
+class user_namespace
+{
+    create
 }

@@ -740,6 +740,25 @@ interface(`apache_search_config',`
 
 ########################################
 ## <summary>
+##	Dontaudit the specified domain to search
+##	apache configuration dirs.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`apache_dontaudit_search_config',`
+	gen_require(`
+		type httpd_config_t;
+	')
+
+	dontaudit $1 httpd_config_t:dir search_dir_perms;
+')
+
+########################################
+## <summary>
 ##	Allow the specified domain to read
 ##	apache configuration files.
 ## </summary>
@@ -1988,4 +2007,22 @@ interface(`apache_ioctl_stream_sockets',`
     ')
 
     allow $1 httpd_t:unix_stream_socket ioctl;
+')
+
+#######################################
+## <summary>
+##	Allow the specified domain read httpd semaphores
+## </summary>
+##	<param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`apache_read_semaphores',`
+	gen_require(`
+		type httpd_t;
+	')
+
+	allow $1 httpd_t:sem r_sem_perms;
 ')

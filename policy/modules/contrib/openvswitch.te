@@ -21,6 +21,9 @@ logging_log_file(openvswitch_log_t)
 type openvswitch_tmp_t;
 files_tmp_file(openvswitch_tmp_t)
 
+type openvswitch_tmpfs_t;
+files_tmpfs_file(openvswitch_tmpfs_t)
+
 type openvswitch_var_run_t;
 files_pid_file(openvswitch_var_run_t)
 
@@ -32,7 +35,7 @@ systemd_unit_file(openvswitch_unit_file_t)
 # openvswitch local policy
 #
 
-allow openvswitch_t self:capability { dac_override dac_read_search fowner net_broadcast net_admin ipc_lock sys_module sys_nice sys_rawio sys_resource chown setgid setpcap setuid kill };
+allow openvswitch_t self:capability { dac_override dac_read_search fowner fsetid net_broadcast net_admin ipc_lock sys_module sys_nice sys_rawio sys_resource chown setgid setpcap setuid kill };
 allow openvswitch_t self:capability2 block_suspend;
 allow openvswitch_t self:process { fork setsched setrlimit signal setcap };
 allow openvswitch_t self:fifo_file rw_fifo_file_perms;
@@ -67,6 +70,9 @@ manage_files_pattern(openvswitch_t, openvswitch_tmp_t, openvswitch_tmp_t)
 manage_lnk_files_pattern(openvswitch_t, openvswitch_tmp_t, openvswitch_tmp_t)
 manage_sock_files_pattern(openvswitch_t, openvswitch_tmp_t, openvswitch_tmp_t)
 files_tmp_filetrans(openvswitch_t, openvswitch_tmp_t, { file dir sock_file })
+
+manage_dirs_pattern(openvswitch_t, openvswitch_tmpfs_t, openvswitch_tmpfs_t)
+fs_tmpfs_filetrans(openvswitch_t, openvswitch_tmpfs_t, dir)
 
 manage_dirs_pattern(openvswitch_t, openvswitch_var_run_t, openvswitch_var_run_t)
 manage_files_pattern(openvswitch_t, openvswitch_var_run_t, openvswitch_var_run_t)
@@ -109,6 +115,7 @@ fs_getattr_all_fs(openvswitch_t)
 fs_search_cgroup_dirs(openvswitch_t)
 fs_manage_hugetlbfs_files(openvswitch_t)
 fs_manage_hugetlbfs_dirs(openvswitch_t)
+fs_search_tracefs_dirs(openvswitch_t)
 
 auth_use_nsswitch(openvswitch_t)
 

@@ -42,9 +42,11 @@
 /dev/full		-c	gen_context(system_u:object_r:null_device_t,s0)
 /dev/fw.*		-c	gen_context(system_u:object_r:usb_device_t,s0)
 /dev/gfx		-c	gen_context(system_u:object_r:xserver_misc_device_t,s0)
+/dev/gnss[0-9]+		-c	gen_context(system_u:object_r:gnss_device_t,s0)
 /dev/graphics		-c	gen_context(system_u:object_r:xserver_misc_device_t,s0)
 /dev/gtrsc.*		-c	gen_context(system_u:object_r:clock_device_t,s0)
 /dev/hfmodem		-c	gen_context(system_u:object_r:sound_device_t,s0)
+/dev/hfi1_[0-9]+	-c	gen_context(system_u:object_r:hfi1_device_t,s0)
 /dev/hiddev.*		-c	gen_context(system_u:object_r:usb_device_t,s0)
 /dev/hidraw.*		-c	gen_context(system_u:object_r:usb_device_t,s0)
 /dev/hpet		-c	gen_context(system_u:object_r:clock_device_t,s0)
@@ -52,6 +54,7 @@
 /dev/hwrng		-c	gen_context(system_u:object_r:random_device_t,s0)
 /dev/gpiochip[0-9]+		-c	gen_context(system_u:object_r:gpio_device_t,s0)
 /dev/i915		-c	gen_context(system_u:object_r:dri_device_t,s0)
+/dev/iio:device[0-9]+	-c	gen_context(system_u:object_r:iio_device_t,s0)
 /dev/inportbm		-c	gen_context(system_u:object_r:mouse_device_t,s0)
 /dev/infiniband/.*	-c	gen_context(system_u:object_r:infiniband_device_t,mls_systemhigh)
 /dev/infiniband/issm[0-9]+		-c	gen_context(system_u:object_r:infiniband_mgmt_device_t,mls_systemhigh)
@@ -105,6 +108,8 @@
 /dev/ndctl[0-9]		-c	gen_context(system_u:object_r:nvram_device_t,mls_systemhigh)
 /dev/oldmem		-c	gen_context(system_u:object_r:memory_device_t,mls_systemhigh)
 /dev/opengl		-c	gen_context(system_u:object_r:xserver_misc_device_t,s0)
+/dev/papr-sysparm	-c	gen_context(system_u:object_r:papr_sysparm_device_t,s0)
+/dev/papr-vpd		-c	gen_context(system_u:object_r:papr_vpd_device_t,s0)
 /dev/par.*		-c	gen_context(system_u:object_r:printer_device_t,s0)
 /dev/patmgr[01]		-c	gen_context(system_u:object_r:sound_device_t,s0)
 /dev/pc110pad		-c	gen_context(system_u:object_r:mouse_device_t,s0)
@@ -119,13 +124,16 @@
 /dev/rmidi.*		-c	gen_context(system_u:object_r:sound_device_t,s0)
 /dev/radeon		-c	gen_context(system_u:object_r:dri_device_t,s0)
 /dev/kfd		-c	gen_context(system_u:object_r:hsa_device_t,s0)
-/dev/radio.*		-c	gen_context(system_u:object_r:v4l_device_t,s0)
+/dev/radio[0-9]+	-c	gen_context(system_u:object_r:v4l_device_t,s0)
 /dev/random		-c	gen_context(system_u:object_r:random_device_t,s0)
 /dev/raw1394.*		-c	gen_context(system_u:object_r:v4l_device_t,s0)
 /dev/rfkill		-c	gen_context(system_u:object_r:wireless_device_t,s0)
 /dev/(misc/)?rtc[0-9]*	-c	gen_context(system_u:object_r:clock_device_t,s0)
 /dev/sequencer		-c	gen_context(system_u:object_r:sound_device_t,s0)
 /dev/sequencer2		-c	gen_context(system_u:object_r:sound_device_t,s0)
+/dev/sgx_enclave	-c	gen_context(system_u:object_r:sgx_enclave_device_t,s0)
+/dev/sgx_provision	-c	gen_context(system_u:object_r:sgx_provision_device_t,s0)
+/dev/sgx_vepc		-c	gen_context(system_u:object_r:sgx_vepc_device_t,s0)
 /dev/smpte.*		-c	gen_context(system_u:object_r:sound_device_t,s0)
 /dev/smu		-c	gen_context(system_u:object_r:power_device_t,s0)
 /dev/srnd[0-7]		-c	gen_context(system_u:object_r:sound_device_t,s0)
@@ -151,6 +159,7 @@
 ifdef(`distro_suse', `
 /dev/usbscanner		-c	gen_context(system_u:object_r:scanner_device_t,s0)
 ')
+/dev/vas		-c	gen_context(system_u:object_r:vas_device_t,s0)
 /dev/vmci       -c  gen_context(system_u:object_r:vmci_device_t,s0)
 /dev/vsock       -c  gen_context(system_u:object_r:vsock_device_t,s0)
 /dev/vhci       -c  gen_context(system_u:object_r:vhost_device_t,s0)
@@ -163,12 +172,12 @@ ifdef(`distro_suse', `
 /dev/vhost-net		-c	gen_context(system_u:object_r:vhost_device_t,s0)
 /dev/vhost-vdpa-[0-9]+		-c	gen_context(system_u:object_r:vhost_device_t,s0)
 /dev/vhost-vsock		-c	gen_context(system_u:object_r:vhost_device_t,s0)
-/dev/vbi.*		-c	gen_context(system_u:object_r:v4l_device_t,s0)
+/dev/vbi[0-9]+		-c	gen_context(system_u:object_r:v4l_device_t,s0)
 /dev/vbox.*		-c	gen_context(system_u:object_r:xserver_misc_device_t,s0)
 /dev/vga_arbiter	-c	gen_context(system_u:object_r:xserver_misc_device_t,s0)
 /dev/vmmon		-c	gen_context(system_u:object_r:vmware_device_t,s0)
 /dev/vmnet.*		-c	gen_context(system_u:object_r:vmware_device_t,s0)
-/dev/video.*		-c	gen_context(system_u:object_r:v4l_device_t,s0)
+/dev/video[0-9]+		-c	gen_context(system_u:object_r:v4l_device_t,s0)
 /dev/vrtpanel		-c	gen_context(system_u:object_r:mouse_device_t,s0)
 /dev/vttuner		-c	gen_context(system_u:object_r:v4l_device_t,s0)
 /dev/vtx.*		-c	gen_context(system_u:object_r:v4l_device_t,s0)
@@ -204,6 +213,7 @@ ifdef(`distro_suse', `
 /dev/input/mice		-c	gen_context(system_u:object_r:mouse_device_t,s0)
 /dev/input/js.*		-c	gen_context(system_u:object_r:mouse_device_t,s0)
 /dev/input/uinput	-c	gen_context(system_u:object_r:event_device_t,s0)
+/dev/iommu		-c	gen_context(system_u:object_r:iommu_device_t,s0)
 
 /dev/mapper/control	-c	gen_context(system_u:object_r:lvm_control_t,s0)
 
@@ -216,6 +226,7 @@ ifdef(`distro_suse', `
 /dev/pts(/.*)?			<<none>>
 
 /dev/s(ou)?nd/.*	-c	gen_context(system_u:object_r:sound_device_t,s0)
+/dev/swradio[0-9]+	-c	gen_context(system_u:object_r:v4l_device_t,s0)
 
 /dev/ss[0-9]+		-c	gen_context(system_u:object_r:gpfs_device_t,s0)
 
@@ -228,9 +239,12 @@ ifdef(`distro_suse', `
 /dev/usb/lp.*		-c	gen_context(system_u:object_r:printer_device_t,s0)
 /dev/usb/mdc800.*	-c	gen_context(system_u:object_r:scanner_device_t,s0)
 /dev/usb/scanner.*	-c	gen_context(system_u:object_r:scanner_device_t,s0)
+/dev/userfaultfd	-c	gen_context(system_u:object_r:userfaultfd_device_t,s0)
 
 /dev/vmbus/hv_vss		-c	gen_context(system_u:object_r:hypervvssd_device_t,s0)
 /dev/vmbus/hv_kvp		-c	gen_context(system_u:object_r:hypervkvp_device_t,s0)
+/dev/v4l-subdev[0-9]+	-c	gen_context(system_u:object_r:v4l_device_t,s0)
+/dev/v4l-touch[0-9]+	-c	gen_context(system_u:object_r:v4l_device_t,s0)
 
 /dev/wwan.+		-c	gen_context(system_u:object_r:modem_device_t,s0)
 
@@ -245,7 +259,7 @@ ifdef(`distro_suse', `
 
 ifdef(`distro_debian',`
 # this is a static /dev dir "backup mount"
-# if you want to disable udev, you'll have to boot permissive and relabel!
+# if you want to disable udev, you will have to boot permissive and relabel!
 /dev/\.static		-d	gen_context(system_u:object_r:device_t,s0)
 /dev/\.static/dev	-d	gen_context(system_u:object_r:device_t,s0)
 /dev/\.static/dev/(.*)?		<<none>>

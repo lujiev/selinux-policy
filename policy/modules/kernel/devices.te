@@ -141,6 +141,12 @@ type hypervvssd_device_t;
 dev_node(hypervvssd_device_t)
 
 #
+# Type for /dev/gnss0
+#
+type gnss_device_t;
+dev_node(gnss_device_t)
+
+#
 # Type for /dev/ss0
 #
 type gpfs_device_t;
@@ -151,6 +157,18 @@ dev_node(gpfs_device_t)
 #
 type gpio_device_t;
 dev_node(gpio_device_t)
+
+#
+# Type for /dev/hfi1_[0-9]+
+#
+type hfi1_device_t;
+dev_node(hfi1_device_t)
+
+#
+# Type for /dev/iio:device[0-9]+
+#
+type iio_device_t;
+dev_node(iio_device_t)
 
 #
 # Type for /dev/ipmi/0
@@ -169,6 +187,12 @@ dev_node(infiniband_device_t)
 #
 type infiniband_mgmt_device_t;
 dev_node(infiniband_mgmt_device_t)
+
+#
+# Type for /dev/iommu devices
+#
+type iommu_device_t;
+dev_node(iommu_device_t)
 
 #
 # Type for /dev/kmsg
@@ -291,6 +315,14 @@ type opal_device_t;
 dev_node(opal_device_t)
 
 #
+# Types for /dev/papr-* devices
+#
+type papr_sysparm_device_t;
+dev_node(papr_sysparm_device_t)
+type papr_vpd_device_t;
+dev_node(papr_vpd_device_t)
+
+#
 # Type for /dev/pmu
 #
 type power_device_t;
@@ -314,6 +346,16 @@ dev_node(random_device_t)
 
 type scanner_device_t;
 dev_node(scanner_device_t)
+
+#
+# Types for Software Guard eXtensions (SGX) Virtualization
+#
+type sgx_enclave_device_t;
+dev_node(sgx_enclave_device_t)
+type sgx_provision_device_t;
+dev_node(sgx_provision_device_t)
+type sgx_vepc_device_t;
+dev_node(sgx_vepc_device_t)
 
 #
 # Type for smartcards
@@ -379,6 +421,12 @@ type usbmon_device_t;
 dev_node(usbmon_device_t)
 
 #
+# Type for /dev/userfaultfd
+#
+type userfaultfd_device_t;
+dev_node(userfaultfd_device_t)
+
+#
 # userio_device_t is the type for /dev/uio[0-9]+
 #
 type userio_device_t;
@@ -389,6 +437,9 @@ dev_node(userio_device_t)
 #
 type uhid_device_t;
 dev_node(uhid_device_t)
+
+type vas_device_t;
+dev_node(vas_device_t)
 
 type vfio_device_t;
 dev_node(vfio_device_t)

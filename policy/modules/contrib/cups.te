@@ -140,7 +140,8 @@ optional_policy(`
 
 allow cupsd_t self:capability { ipc_lock sys_admin dac_read_search dac_override kill fsetid fowner chown  sys_resource sys_tty_config };
 dontaudit cupsd_t self:capability { sys_tty_config net_admin };
-allow cupsd_t self:capability2 { block_suspend wake_alarm };
+allow cupsd_t self:capability2 { block_suspend bpf wake_alarm };
+allow cupsd_t self:cap_userns sys_ptrace;
 allow cupsd_t self:process { getpgid setpgid setsched };
 allow cupsd_t self:unix_stream_socket { accept connectto listen };
 allow cupsd_t self:netlink_selinux_socket create_socket_perms;
@@ -383,6 +384,7 @@ optional_policy(`
 
 optional_policy(`
 	samba_read_config(cupsd_t)
+	samba_create_var_files(cupsd_t)
 	samba_rw_var_files(cupsd_t)
 	samba_stream_connect_nmbd(cupsd_t)
 ')
@@ -405,6 +407,10 @@ optional_policy(`
 
 optional_policy(`
     vmware_read_system_config(cupsd_t)
+')
+
+optional_policy(`
+	xserver_dbus_chat_xdm(cupsd_t)
 ')
 
 ########################################
@@ -562,6 +568,7 @@ read_sock_files_pattern(cupsd_lpd_t, cupsd_var_run_t, cupsd_var_run_t)
 stream_connect_pattern(cupsd_lpd_t, cupsd_var_run_t, cupsd_var_run_t, cupsd_t)
 
 kernel_read_kernel_sysctls(cupsd_lpd_t)
+kernel_read_net_sysctls(cupsd_lpd_t)
 kernel_read_system_state(cupsd_lpd_t)
 
 corenet_all_recvfrom_netlabel(cupsd_lpd_t)
@@ -647,9 +654,12 @@ files_tmp_filetrans(cups_pdf_t, cups_pdf_tmp_t, { dir file })
 
 fs_search_auto_mountpoints(cups_pdf_t)
 
+kernel_read_net_sysctls(cups_pdf_t)
 kernel_read_system_state(cups_pdf_t)
 
 auth_use_nsswitch(cups_pdf_t)
+
+logging_send_syslog_msg(cups_pdf_t)
 
 userdom_manage_user_home_content_dirs(cups_pdf_t)
 userdom_manage_user_home_content_files(cups_pdf_t)

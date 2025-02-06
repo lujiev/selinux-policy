@@ -38,7 +38,9 @@ files_tmpfs_file(keepalived_tmpfs_t)
 #
 
 allow keepalived_t self:capability { net_admin net_raw kill dac_read_search setuid setgid sys_admin sys_nice sys_ptrace };
-allow keepalived_t self:process { signal_perms getpgid setpgid setsched };
+allow keepalived_t self:capability2 bpf;
+allow keepalived_t self:cap_userns { sys_ptrace };
+allow keepalived_t self:process { signal_perms getpgid setpgid setsched setrlimit };
 allow keepalived_t self:icmp_socket create_socket_perms;
 allow keepalived_t self:netlink_socket create_socket_perms;
 allow keepalived_t self:netlink_generic_socket create_socket_perms;
@@ -56,6 +58,9 @@ allow keepalived_t keepalived_var_run_t:dir mounton;
 manage_files_pattern(keepalived_t, keepalived_tmpfs_t, keepalived_tmpfs_t)
 manage_dirs_pattern(keepalived_t, keepalived_tmpfs_t, keepalived_tmpfs_t)
 fs_tmpfs_filetrans(keepalived_t, keepalived_tmpfs_t, { dir file })
+
+manage_files_pattern(keepalived_t, keepalived_tmp_t, keepalived_tmp_t)
+files_tmp_filetrans(keepalived_t, keepalived_tmp_t, file)
 
 kernel_read_system_state(keepalived_t)
 kernel_read_network_state(keepalived_t)
@@ -81,10 +86,13 @@ corenet_tcp_connect_squid_port(keepalived_t)
 domain_read_all_domains_state(keepalived_t)
 domain_getattr_all_domains(keepalived_t)
 
+dev_read_sysfs(keepalived_t)
 dev_read_urand(keepalived_t)
 
 files_dontaudit_mounton_rootfs(keepalived_var_run_t)
 files_mounton_rootfs(keepalived_t)
+files_watch_var_run_dirs(keepalived_t)
+fs_getattr_tmpfs(keepalived_t)
 fs_read_nsfs_files(keepalived_t)
 fs_unmount_tmpfs(keepalived_t)
 
@@ -93,9 +101,6 @@ modutils_domtrans_kmod(keepalived_t)
 init_signal(keepalived_t)
 
 logging_send_syslog_msg(keepalived_t)
-
-allow keepalived_t keepalived_tmp_t:file { create_file_perms write_file_perms };
-files_tmp_filetrans(keepalived_t, keepalived_tmp_t, file)
 
 optional_policy(`
     dbus_system_bus_client(keepalived_t)
@@ -143,6 +148,8 @@ optional_policy(`
 	allow keepalived_t keepalived_unconfined_script_exec_t:dir search_dir_perms;
 	allow keepalived_t keepalived_unconfined_script_exec_t:dir read_file_perms;
 	allow keepalived_t keepalived_unconfined_script_exec_t:file ioctl;
+	dontaudit keepalived_t keepalived_unconfined_script_exec_t:file setattr;
+
 
 	init_dbus_chat(keepalived_unconfined_script_t)
 

@@ -22,9 +22,10 @@ HOME_DIR/\.local/share/keyrings(/.*)?	gen_context(system_u:object_r:gkeyringd_gn
 HOME_DIR/\.Xdefaults		gen_context(system_u:object_r:config_home_t,s0)
 HOME_DIR/\.xine(/.*)?		gen_context(system_u:object_r:config_home_t,s0)
 
-/var/run/user/%{USERID}/\.orc(/.*)?		gen_context(system_u:object_r:gstreamer_home_t,s0)
-/var/run/user/%{USERID}/dconf(/.*)?	gen_context(system_u:object_r:config_home_t,s0)
-/var/run/user/%{USERID}/keyring.*	gen_context(system_u:object_r:gkeyringd_tmp_t,s0)
+/run/user/%{USERID}/\.orc(/.*)?		gen_context(system_u:object_r:gstreamer_home_t,s0)
+/run/user/%{USERID}/dconf(/.*)?	gen_context(system_u:object_r:config_home_t,s0)
+/run/user/%{USERID}/keyring.*	gen_context(system_u:object_r:gkeyringd_tmp_t,s0)
+/run/gnome-initial-setup(/.*)?	gen_context(system_u:object_r:gnome_initial_setup_var_run_t,s0)
 
 /root/\.cache(/.*)?	gen_context(system_u:object_r:cache_home_t,s0)
 /root/\.color/icc(/.*)?	gen_context(system_u:object_r:icc_data_home_t,s0)
@@ -59,5 +60,9 @@ HOME_DIR/\.xine(/.*)?		gen_context(system_u:object_r:config_home_t,s0)
 
 /usr/libexec/gconf-defaults-mechanism	    	--      gen_context(system_u:object_r:gconfdefaultsm_exec_t,s0)
 
+/usr/libexec/gnome-initial-setup.*	--	gen_context(system_u:object_r:gnome_initial_setup_exec_t,s0)
+
 /usr/libexec/gnome-system-monitor-mechanism 	--      gen_context(system_u:object_r:gnomesystemmm_exec_t,s0)
 /usr/libexec/kde(3|4)/ksysguardprocesslist_helper	--		gen_context(system_u:object_r:gnomesystemmm_exec_t,s0)
+
+/var/lib/gnome-initial-setup(/.*)?	--	gen_context(system_u:object_r:gnome_initial_setup_var_lib_t,s0)

@@ -29,7 +29,7 @@ gen_tunable(abrt_upload_watch_anon_write, true)
 ##	handle ABRT event scripts.
 ##	</p>
 ## </desc>
-gen_tunable(abrt_handle_event, false)
+gen_tunable(abrt_handle_event, true)
 
 attribute abrt_domain;
 
@@ -38,6 +38,7 @@ roleattribute system_r abrt_helper_roles;
 
 abrt_basic_types_template(abrt)
 init_daemon_domain(abrt_t, abrt_exec_t)
+init_nnp_daemon_domain(abrt_t)
 
 type abrt_initrc_exec_t;
 init_script_file(abrt_initrc_exec_t)
@@ -115,6 +116,7 @@ ifdef(`enable_mcs',`
 #
 
 allow abrt_t self:capability { chown dac_read_search dac_override fowner fsetid ipc_lock kill setgid setuid sys_nice sys_ptrace };
+allow abrt_t self:cap_userns sys_ptrace;
 dontaudit abrt_t self:capability { net_admin sys_rawio sys_ptrace };
 allow abrt_t self:process { setpgid sigkill signal signull setsched getsched };
 
@@ -230,6 +232,7 @@ fs_read_nfs_symlinks(abrt_t)
 fs_search_all(abrt_t)
 fs_getattr_nsfs_files(abrt_t)
 fs_map_dos_files(abrt_t)
+fs_read_pstore_files(abrt_t)
 
 storage_dontaudit_read_fixed_disk(abrt_t)
 
@@ -376,6 +379,7 @@ optional_policy(`
 allow abrt_handle_event_t self:fifo_file rw_fifo_file_perms;
 
 tunable_policy(`abrt_handle_event',`
+	allow abrt_t abrt_handle_event_t:process2 nnp_transition;
 	domtrans_pattern(abrt_t, abrt_handle_event_exec_t, abrt_handle_event_t)
 ',`
 	can_exec(abrt_t, abrt_handle_event_exec_t)
@@ -566,11 +570,14 @@ tunable_policy(`deny_ptrace',`',`
 
 files_manage_non_security_dirs(abrt_dump_oops_t)
 files_manage_non_security_files(abrt_dump_oops_t)
+files_read_non_security_sock_files(abrt_dump_oops_t)
 files_map_non_security_files(abrt_dump_oops_t)
 
 fs_getattr_all_fs(abrt_dump_oops_t)
 fs_list_pstorefs(abrt_dump_oops_t)
 fs_getattr_nsfs_files(abrt_dump_oops_t)
+
+init_stream_connectto(abrt_dump_oops_t)
 
 selinux_compute_create_context(abrt_dump_oops_t)
 
@@ -585,8 +592,21 @@ logging_watch_journal_dir(abrt_dump_oops_t)
 init_read_var_lib_files(abrt_dump_oops_t)
 
 optional_policy(`
+	samba_stream_connect_winbind(abrt_dump_oops_t)
+')
+
+optional_policy(`
     sssd_read_public_files(abrt_dump_oops_t)
     sssd_stream_connect(abrt_dump_oops_t)
+')
+
+optional_policy(`
+	systemd_machined_stream_connect(abrt_dump_oops_t)
+	systemd_userdbd_stream_connect(abrt_dump_oops_t)
+')
+
+optional_policy(`
+	systemd_homed_stream_connect(abrt_dump_oops_t)
 ')
 
 optional_policy(`
@@ -679,7 +699,5 @@ optional_policy(`
 
 allow abrt_domain abrt_var_run_t:sock_file write_sock_file_perms;
 allow abrt_domain abrt_var_run_t:unix_stream_socket connectto;
-
-dev_rw_crypto(abrt_domain)
 
 files_read_etc_files(abrt_domain)

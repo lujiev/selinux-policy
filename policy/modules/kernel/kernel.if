@@ -144,6 +144,24 @@ interface(`kernel_dontaudit_setsched',`
 
 ########################################
 ## <summary>
+##	Get scheduling policy and attributes of kernel threads.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`kernel_getsched',`
+	gen_require(`
+		type kernel_t;
+	')
+
+	allow $1 kernel_t:process getsched;
+')
+
+########################################
+## <summary>
 ##	Send a SIGCHLD signal to kernel threads.
 ## </summary>
 ## <param name="domain">
@@ -414,7 +432,6 @@ interface(`kernel_load_module',`
 ## </param>
 #
 interface(`kernel_load_unsigned_module',`
-	allow $1 self:lockdown integrity;
 	kernel_load_module($1)
 ')
 
@@ -510,6 +527,24 @@ interface(`kernel_rw_key',`
 
 ########################################
 ## <summary>
+##	Allow read the kernel key ring.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`kernel_read_key',`
+	gen_require(`
+		type kernel_t;
+	')
+
+	allow $1 kernel_t:key read;
+')
+
+########################################
+## <summary>
 ##	Allow view the kernel key ring.
 ## </summary>
 ## <param name="domain">
@@ -543,6 +578,25 @@ interface(`kernel_dontaudit_view_key',`
 
 	dontaudit $1 kernel_t:key view;
 ')
+
+########################################
+## <summary>
+##	Allow to set attributes on the kernel key ring.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`kernel_setattr_key',`
+	gen_require(`
+		type kernel_t;
+	')
+
+	allow $1 kernel_t:key setattr;
+')
+
 ########################################
 ## <summary>
 ##	Allows caller to read the ring buffer.
@@ -827,8 +881,6 @@ interface(`kernel_read_debugfs',`
 		type debugfs_t;
 	')
 
-	allow $1 self:lockdown integrity;
-
 	read_files_pattern($1, debugfs_t, debugfs_t)
 	read_lnk_files_pattern($1, debugfs_t, debugfs_t)
 	list_dirs_pattern($1, debugfs_t, debugfs_t)
@@ -866,8 +918,6 @@ interface(`kernel_manage_debugfs',`
 	gen_require(`
 		type debugfs_t;
 	')
-
-	allow $1 self:lockdown integrity;
 
 	manage_files_pattern($1, debugfs_t, debugfs_t)
     manage_dirs_pattern($1,debugfs_t, debugfs_t)
@@ -1092,6 +1142,24 @@ interface(`kernel_getattr_proc_files',`
 	')
 
 	getattr_files_pattern($1, proc_t, proc_t)
+')
+
+########################################
+## <summary>
+##	Read generic files in /proc.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`kernel_read_proc_files',`
+	gen_require(`
+		type proc_t;
+	')
+
+	read_files_pattern($1, proc_t, proc_t)
 ')
 
 ########################################
@@ -1396,7 +1464,6 @@ interface(`kernel_read_core_if',`
 	')
 
 	allow $1 self:capability sys_rawio;
-	allow $1 self:lockdown confidentiality;
 	read_files_pattern($1, proc_t, proc_kcore_t)
 	list_dirs_pattern($1, proc_t, proc_t)
 
@@ -2011,7 +2078,7 @@ interface(`kernel_read_unix_sysctls',`
 	')
 
 	read_files_pattern($1, { proc_t sysctl_t sysctl_net_t }, sysctl_net_unix_t)
-	list_dirs_pattern($1, { proc_t sysctl_t }, sysctl_net_t)
+	list_dirs_pattern($1, { proc_t sysctl_t sysctl_net_t }, sysctl_net_unix_t)
 ')
 
 ########################################
@@ -2541,6 +2608,24 @@ interface(`kernel_mounton_systemd_ProtectKernelTunables',`
 
 ########################################
 ## <summary>
+##	Get the attributes of all sysctls.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`kernel_getattr_all_sysctls',`
+	gen_require(`
+		attribute sysctl_type;
+	')
+
+	allow $1 sysctl_type:file getattr;
+')
+
+########################################
+## <summary>
 ##	Allow caller to read all sysctls.
 ## </summary>
 ## <param name="domain">
@@ -2822,6 +2907,24 @@ interface(`kernel_rw_unlabeled_files',`
 	')
 
 	allow $1 unlabeled_t:file rw_file_perms;
+')
+
+########################################
+## <summary>
+##	Watch unlabeled directories.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`kernel_watch_unlabeled_dirs',`
+	gen_require(`
+		type unlabeled_t;
+	')
+
+	allow $1 unlabeled_t:dir watch_dir_perms;
 ')
 
 ########################################
@@ -3684,6 +3787,25 @@ interface(`kernel_rw_stream_socket_perms',`
     allow $1 kernel_t:fd use;
 ')
 
+#######################################
+## <summary>
+##  Allow the specified domain to ioctl a
+##  kernel with a unix domain stream sockets.
+## </summary>
+## <param name="domain">
+##  <summary>
+##  Domain allowed access.
+##  </summary>
+## </param>
+#
+interface(`kernel_ioctl_stream_sockets',`
+    gen_require(`
+        type init_t;
+    ')
+
+    allow $1 kernel_t:unix_stream_socket { getopt ioctl };
+')
+
 ########################################
 ## <summary>
 ##	Make the specified type usable for regular entries in proc
@@ -4039,6 +4161,44 @@ interface(`kernel_read_security_state_symlinks',`
 
 ########################################
 ## <summary>
+##	Allow caller to read/write nmi_watchdog state information.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+##
+#
+interface(`kernel_rw_nmi_watchdog_state',`
+	gen_require(`
+		type sysctl_t, sysctl_kernel_t, sysctl_nmi_watchdog_t;
+	')
+
+	rw_files_pattern($1, { proc_t sysctl_t sysctl_kernel_t }, sysctl_nmi_watchdog_t)
+')
+
+########################################
+## <summary>
+##	Allow caller to write nmi_watchdog state information.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+##
+#
+interface(`kernel_write_nmi_watchdog_state',`
+	gen_require(`
+		type sysctl_t, sysctl_kernel_t, sysctl_nmi_watchdog_t;
+	')
+
+	write_files_pattern($1, { proc_t sysctl_t sysctl_kernel_t }, sysctl_nmi_watchdog_t)
+')
+
+########################################
+## <summary>
 ##	Access unlabeled infiniband pkeys.
 ## </summary>
 ## <param name="domain">
@@ -4075,8 +4235,14 @@ interface(`kernel_ib_manage_subnet_unlabeled_endports',`
 
 ########################################
 ## <summary>
-##	Allow caller to read the security state symbolic links.
+##	Read and write the security state information.
 ## </summary>
+## <desc>
+##	<p>
+##	Allow the specified domain to read and write
+##	the security state information.
+##     </p>
+## </desc>
 ## <param name="domain">
 ##	<summary>
 ##	Domain allowed access.
@@ -4336,7 +4502,6 @@ interface(`kernel_unlabeled_entry_type',`
 #
 interface(`kernel_kexec_load',`
 	allow $1 self:capability sys_boot;
-	allow $1 self:lockdown integrity;
 ')
 
 ########################################
@@ -4355,7 +4520,6 @@ interface(`kernel_write_perf_event',`
 	# the kernel commit 08ef1af4de5f
 	# (perf/core: Fix unconditional security_locked_down() call)
 	# is backported to stable kernels
-	allow $1 self:lockdown confidentiality;
 	allow $1 self:perf_event write_perf_event_perms;
 ')
 
@@ -4372,6 +4536,222 @@ interface(`kernel_write_perf_event',`
 interface(`kernel_manage_perf_event',`
 	allow $1 self:capability2 perfmon;
 	# The confidentiality permission may not be needed, refer to kernel_write_perf_event()
-	allow $1 self:lockdown confidentiality;
 	allow $1 self:perf_event manage_perf_event_perms;
+')
+
+########################################
+## <summary>
+##	Allow caller domain to run bpf.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`kernel_prog_run_bpf',`
+	gen_require(`
+		type init_t;
+	')
+
+    allow $1 kernel_t:bpf { map_read map_write prog_run };
+')
+
+########################################
+## <summary>
+##	Set up type transition for userfaultfd anon inodes.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain to receive the type transition.
+##	</summary>
+## </param>
+#
+interface(`kernel_userfaultfd_domtrans',`
+	gen_require(`
+		type userfaultfd_t;
+	')
+	type_transition $1 self:anon_inode userfaultfd_t "[userfaultfd]";
+')
+
+########################################
+## <summary>
+##	Allow the domain to use the userfaultfd API via an inherited
+##	file descriptor.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`kernel_userfaultfd_use_inherited',`
+	gen_require(`
+		type userfaultfd_t;
+	')
+	allow $1 userfaultfd_t:anon_inode { getattr ioctl read };
+
+	# Work around a known bug; see:
+	# https://lore.kernel.org/selinux/20210624152515.1844133-1-omosnace@redhat.com/
+	allow $1 userfaultfd_t:anon_inode { write };
+')
+
+########################################
+## <summary>
+##	Allow the domain to use the userfaultfd API.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`kernel_userfaultfd_use',`
+	gen_require(`
+		type userfaultfd_t;
+	')
+	kernel_userfaultfd_use_inherited($1)
+	allow $1 userfaultfd_t:anon_inode create;
+')
+
+########################################
+## <summary>
+##	Set up type transition for io_uring anon inodes.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain to receive the type transition.
+##	</summary>
+## </param>
+#
+interface(`kernel_io_uring_domtrans',`
+	gen_require(`
+		type io_uring_t;
+	')
+	type_transition $1 self:anon_inode io_uring_t "[io_uring]";
+')
+
+########################################
+## <summary>
+##	Allow the domain to use the io_uring API via an inherited file
+##	descriptor.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`kernel_io_uring_use_inherited',`
+	gen_require(`
+		type io_uring_t;
+	')
+	allow $1 io_uring_t:anon_inode { getattr read write map };
+')
+
+########################################
+## <summary>
+##	Allow the domain to use the io_uring API.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`kernel_io_uring_use',`
+	gen_require(`
+		type io_uring_t;
+	')
+	kernel_io_uring_use_inherited($1)
+	allow $1 io_uring_t:anon_inode create;
+')
+
+########################################
+## <summary>
+##	Set up type transition for secretmem anon inodes.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain to receive the type transition.
+##	</summary>
+## </param>
+#
+interface(`kernel_secretmem_domtrans',`
+	gen_require(`
+		type secretmem_t;
+	')
+	type_transition $1 self:anon_inode secretmem_t "[secretmem]";
+')
+
+########################################
+## <summary>
+##	Allow the domain to use the secretmem API.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`kernel_secretmem_use',`
+	gen_require(`
+		type secretmem_t;
+	')
+	allow $1 secretmem_t:anon_inode create;
+')
+
+########################################
+## <summary>
+##	Set up type transition for KVM guest memfd anon inodes.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain to receive the type transition.
+##	</summary>
+## </param>
+#
+interface(`kernel_kvm_gmem_domtrans',`
+	gen_require(`
+		type kvm_gmem_t;
+	')
+	type_transition $1 self:anon_inode kvm_gmem_t "[kvm-gmem]";
+')
+
+########################################
+## <summary>
+##	Allow the domain to use the KVM guest memfd interface via an
+##	inherited file descriptor.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`kernel_kvm_gmem_use_inherited',`
+	gen_require(`
+		type kvm_gmem_t;
+	')
+	# Not sure about the set of reachable permissions here -
+	# may be refined in the future to a smaller/bigger set.
+	allow $1 kvm_gmem_t:anon_inode { getattr read write map };
+')
+
+########################################
+## <summary>
+##	Allow the domain to use the KVM guest memfd interface.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`kernel_kvm_gmem_use',`
+	gen_require(`
+		type kvm_gmem_t;
+	')
+	kernel_kvm_gmem_use_inherited($1)
+	allow $1 kvm_gmem_t:anon_inode create;
 ')

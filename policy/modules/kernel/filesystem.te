@@ -5,6 +5,7 @@ policy_module(filesystem, 1.17.2)
 # Declarations
 #
 
+attribute cgroup_type;
 attribute filesystem_type;
 attribute filesystem_unconfined_type;
 attribute noxattrfs;
@@ -99,11 +100,16 @@ files_mountpoint(capifs_t)
 genfscon capifs / gen_context(system_u:object_r:capifs_t,s0)
 
 type cgroup_t alias cgroupfs_t;
+typeattribute cgroup_t cgroup_type;
 fs_type(cgroup_t)
 files_mountpoint(cgroup_t)
 dev_associate_sysfs(cgroup_t)
 genfscon cgroup / gen_context(system_u:object_r:cgroup_t,s0)
 genfscon cgroup2 / gen_context(system_u:object_r:cgroup_t,s0)
+
+type cgroup_memory_pressure_t;
+typeattribute cgroup_memory_pressure_t cgroup_type;
+files_type(cgroup_memory_pressure_t)
 
 type configfs_t;
 fs_type(configfs_t)
@@ -169,16 +175,16 @@ type oprofilefs_t;
 fs_type(oprofilefs_t)
 genfscon oprofilefs / gen_context(system_u:object_r:oprofilefs_t,s0)
 
+type pidfs_t;
+fs_type(pidfs_t)
+files_mountpoint(pidfs_t)
+genfscon pidfs_t / gen_context(system_u:object_r:pidfs_t,s0)
+
 type pstore_t alias pstorefs_t;
 fs_type(pstore_t)
 files_mountpoint(pstore_t)
 dev_associate_sysfs(pstore_t)
 genfscon pstore / gen_context(system_u:object_r:pstore_t,s0)
-
-type ramfs_t;
-fs_type(ramfs_t)
-files_mountpoint(ramfs_t)
-fs_use_trans ramfs gen_context(system_u:object_r:ramfs_t,s0);
 
 type romfs_t;
 fs_type(romfs_t)
@@ -216,7 +222,7 @@ genfscon vmhgfs / gen_context(system_u:object_r:vmblock_t,s0)
 #
 # tmpfs_t is the type for tmpfs filesystems
 #
-type tmpfs_t;
+type tmpfs_t alias ramfs_t;
 dev_associate(tmpfs_t)
 fs_type(tmpfs_t)
 files_type(tmpfs_t)
@@ -233,6 +239,7 @@ mls_trusted_object(tmpfs_t)
 fs_use_trans mqueue gen_context(system_u:object_r:tmpfs_t,s0);
 fs_use_trans shm gen_context(system_u:object_r:tmpfs_t,s0);
 fs_use_trans tmpfs gen_context(system_u:object_r:tmpfs_t,s0);
+fs_use_trans ramfs gen_context(system_u:object_r:tmpfs_t,s0);
 
 allow tmpfs_t noxattrfs:filesystem associate;
 
@@ -364,4 +371,5 @@ allow filesystem_unconfined_type filesystem_type:filesystem all_filesystem_perms
 # pseudo filesystem types that are applied to both the filesystem
 # and its files.
 allow filesystem_unconfined_type filesystem_type:{ file } ~entrypoint;
-allow filesystem_unconfined_type filesystem_type:{ dir lnk_file sock_file fifo_file chr_file blk_file } *;
+allow filesystem_unconfined_type filesystem_type:dir ~map;
+allow filesystem_unconfined_type filesystem_type:{ lnk_file sock_file fifo_file chr_file blk_file } *;
