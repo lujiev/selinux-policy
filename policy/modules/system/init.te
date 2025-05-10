@@ -262,6 +262,7 @@ kernel_load_module(init_t)
 kernel_read_all_proc(init_t)
 kernel_list_all_proc(init_t)
 kernel_mounton_all_proc(init_t)
+kernel_mounton_crypto_sysctl_files(init_t)
 
 # There is bug in kernel in 4.16 where lot of domains requesting module_request, for now dontauditing
 kernel_dontaudit_request_load_module(init_t)
@@ -282,6 +283,7 @@ dev_setattr_all_blk_files(init_t)
 dev_setattr_all_chr_files(init_t)
 dev_read_urand(init_t)
 dev_read_raw_memory(init_t)
+dev_read_cpuid(init_t)
 # Early devtmpfs
 dev_rw_generic_chr_files(init_t)
 dev_filetrans_all_named_dev(init_t)
@@ -383,6 +385,8 @@ term_watch_console_dev(init_t)
 term_watch_reads_console_dev(init_t)
 term_watch_unallocated_ttys(init_t)
 term_watch_reads_unallocated_ttys(init_t)
+term_watch_usb_ttys(init_t)
+term_watch_reads_usb_ttys(init_t)
 term_watch_user_ttys(init_t)
 term_watch_reads_user_ttys(init_t)
 
@@ -572,6 +576,7 @@ optional_policy(`
     systemd_allow_create_mount_dir(init_t)
     systemd_hostnamed_delete_config(init_t)
 	systemd_manage_conf_files(init_t)
+	systemd_rw_networkd_tmpfs_files(init_t)
 ')
 
 optional_policy(`
@@ -622,6 +627,7 @@ kernel_read_software_raid_state(init_t)
 kernel_unmount_debugfs(init_t)
 kernel_setsched(init_t)
 kernel_mounton_kernel_sysctl(init_t)
+kernel_rw_psi(init_t)
 
 dev_write_kmsg(init_t)
 dev_write_urand(init_t)
@@ -722,6 +728,7 @@ systemd_manage_random_seed(init_t)
 systemd_manage_all_unit_files(init_t)
 systemd_logger_stream_connect(init_t)
 systemd_login_manage_pid_files(init_t)
+systemd_logind_stream_connect(init_t)
 systemd_config_all_services(init_t)
 systemd_relabelto_fifo_file_passwd_run(init_t)
 systemd_relabel_unit_dirs(init_t)
@@ -837,7 +844,8 @@ optional_policy(`
 ')
 
 optional_policy(`
-	insights_client_rw_pipes(init_t)
+	#insights_client_rw_pipes(init_t)
+	insights_core_write_pipes(init_t)
 ')
 
 optional_policy(`

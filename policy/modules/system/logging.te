@@ -192,9 +192,9 @@ locallogin_dontaudit_use_fds(auditctl_t)
 logging_set_audit_parameters(auditctl_t)
 logging_send_syslog_msg(auditctl_t)
 
-optional_policy(`
-	insights_client_write_tmp(auditctl_t)
-')
+#optional_policy(`
+#	insights_client_write_tmp(auditctl_t)
+#')
 
 optional_policy(`
 	rhcd_read_fifo_files(auditctl_t)
@@ -511,6 +511,8 @@ allow syslogd_t self:tcp_socket create_stream_socket_perms;
 allow syslogd_t self:rawip_socket create_socket_perms;
 allow syslogd_t self:netlink_audit_socket { r_netlink_socket_perms nlmsg_write };
 allow syslogd_t self:netlink_generic_socket create_socket_perms;
+allow syslogd_t self:vsock_socket create_socket_perms;
+
 allow syslogd_t syslog_conf_t:file read_file_perms;
 allow syslogd_t syslog_conf_t:dir list_dir_perms;
 # receive messages including a memfd
@@ -568,6 +570,7 @@ kernel_read_vm_sysctls(syslogd_t)
 kernel_clear_ring_buffer(syslogd_t)
 kernel_change_ring_buffer_level(syslogd_t)
 kernel_read_ring_buffer(syslogd_t)
+kernel_rw_psi(syslogd_t)
 
 ifdef(`hide_broken_symptoms',`
 	kernel_rw_unix_dgram_sockets(syslogd_t)

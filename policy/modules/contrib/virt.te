@@ -516,7 +516,6 @@ corenet_udp_bind_all_ports(svirt_t)
 corenet_tcp_bind_all_ports(svirt_t)
 corenet_tcp_connect_all_ports(svirt_t)
 
-dev_read_sysfs(svirt_t)
 dev_rw_dma_dev(svirt_t)
 
 init_dontaudit_read_state(svirt_t)
@@ -526,6 +525,10 @@ virt_dontaudit_read_state(svirt_t)
 storage_rw_inherited_fixed_disk_dev(svirt_t)
 
 userdom_read_all_users_state(svirt_t)
+
+optional_policy(`
+	nbdkit_stream_connect(svirt_t)
+')
 
 optional_policy(`
 	unconfined_stream_connect(svirt_t)
@@ -1087,7 +1090,7 @@ manage_dirs_pattern(virt_domain, virt_cache_t, virt_cache_t)
 manage_files_pattern(virt_domain, virt_cache_t, virt_cache_t)
 files_var_filetrans(virt_domain, virt_cache_t, { file dir })
 
-read_files_pattern(virt_domain, virt_image_t, virt_image_t)
+rw_files_pattern(virt_domain, virt_image_t, virt_image_t)
 read_lnk_files_pattern(virt_domain, virt_image_t, virt_image_t)
 
 manage_dirs_pattern(virt_domain, svirt_image_t, svirt_image_t)
@@ -1148,6 +1151,7 @@ dev_dontaudit_getattr_all(virt_domain)
 dev_read_generic_symlinks(virt_domain)
 dev_read_rand(virt_domain)
 dev_read_sound(virt_domain)
+dev_read_sysfs(virt_domain)
 dev_read_urand(virt_domain)
 dev_write_sound(virt_domain)
 dev_rw_ksm(virt_domain)
@@ -1234,7 +1238,6 @@ tunable_policy(`virt_use_samba',`
 tunable_policy(`virt_use_usb',`
 	dev_rw_generic_usb_dev(virt_domain)
 	dev_rw_usbfs(virt_domain)
-	dev_read_sysfs(virt_domain)
 	fs_getattr_dos_fs(virt_domain)
 	fs_manage_dos_dirs(virt_domain)
 	fs_manage_dos_files(virt_domain)
@@ -2139,7 +2142,7 @@ allow virtqemud_t self:netlink_audit_socket { nlmsg_relay read write };
 allow virtqemud_t self:process { getpgid setcap setexec setrlimit setsched setsockcreate };
 allow virtqemud_t self:tcp_socket create_socket_perms;
 allow virtqemud_t self:tun_socket { create relabelfrom relabelto };
-allow virtqemud_t self:udp_socket { connect create getattr };
+allow virtqemud_t self:udp_socket { connect create_socket_perms };
 
 allow virtqemud_t qemu_var_run_t:{ dir file sock_file } relabelfrom;
 
@@ -2280,6 +2283,7 @@ fs_create_tmpfs_chr_blk_files(virtqemud_t)
 fs_setattr_tmpfs_chr_blk_files(virtqemud_t)
 fs_relabel_tmpfs_blk_file(virtqemud_t)
 fs_relabel_tmpfs_chr_file(virtqemud_t)
+fs_relabelfrom_tmpfs_lnk_files(virtqemud_t)
 fs_unmount_xattr_fs(virtqemud_t)
 
 seutil_read_default_contexts(virtqemud_t)
@@ -2346,6 +2350,10 @@ optional_policy(`
 ')
 
 optional_policy(`
+	sblim_read_gatherd_state(virtqemud_t)
+')
+
+optional_policy(`
 	ssh_domtrans_ssh(virtqemud_t)
 	ssh_signal_ssh(virtqemud_t)
 ')
@@ -2391,7 +2399,8 @@ optional_policy(`
 #
 # virtstoraged local policy
 #
-allow virtstoraged_t self:capability { dac_override dac_read_search ipc_lock };
+allow virtstoraged_t self:capability { dac_override dac_read_search fsetid ipc_lock };
+
 allow virtstoraged_t self:process { setsched };
 
 files_tmp_filetrans(virtstoraged_t, virtstoraged_tmp_t, { file dir })

@@ -644,6 +644,7 @@ files_list_mnt(xdm_t)
 files_watch_etc_dirs(xdm_t)
 files_watch_etc_files(xdm_t)
 files_watch_lib_dirs(xdm_t)
+files_watch_mnt_dirs(xdm_t)
 files_watch_usr_dirs(xdm_t)
 files_watch_usr_files(xdm_t)
 files_watch_var_lib_dirs(xdm_t)
@@ -745,6 +746,7 @@ mount_watch_pid_dirs(xdm_t)
 mount_watch_pid_files(xdm_t)
 mount_watch_reads_pid_files(xdm_t)
 
+systemd_getattr_inhibit_pipes(xdm_t)
 systemd_write_inhibit_pipes(xdm_t)
 systemd_dbus_chat_localed(xdm_t)
 systemd_dbus_chat_hostnamed(xdm_t)
@@ -1147,12 +1149,6 @@ optional_policy(`
 
 optional_policy(`
     sssd_read_pid_files(xdm_t)
-')
-
-optional_policy(`
-    systemd_homed_write_pid_sock_files(xdm_t)
-    systemd_homed_write_pipes(xdm_t)
-    systemd_homed_dbus_chat(xdm_t)
 ')
 
 optional_policy(`
@@ -1859,5 +1855,4 @@ tunable_policy(`selinuxuser_direct_dri_enabled',`
 #============= xdm_t ==============
 optional_policy(`
 	gnome_remote_desktop_rw_tcp_sockets(xdm_t)
-	dev_rw_dma_dev(xdm_t)
 ')

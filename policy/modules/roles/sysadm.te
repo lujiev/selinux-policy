@@ -43,6 +43,7 @@ dev_rw_autofs(sysadm_t)
 dev_rw_lvm_control(sysadm_t)
 dev_rw_watchdog(sysadm_t)
 dev_rw_wireless(sysadm_t)
+dev_write_kmsg(sysadm_t)
 dev_setattr_all_chr_files(sysadm_t)
 
 domain_dontaudit_read_all_domains_state(sysadm_t)
@@ -612,6 +613,10 @@ optional_policy(`
 	sudo_role_template(sysadm, sysadm_r, sysadm_t)
 	optional_policy(`
 		crontab_admin_domtrans(sysadm_sudo_t)
+	')
+
+	optional_policy(`
+		rpm_script_signal(sysadm_sudo_t)
 	')
 ')
 

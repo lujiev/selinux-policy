@@ -1660,6 +1660,51 @@ interface(`kernel_read_network_state_symlinks',`
 
 ########################################
 ## <summary>
+##	Allow caller to receive pressure stall information (PSI).
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+## <rolecap/>
+#
+interface(`kernel_read_psi',`
+	gen_require(`
+		type proc_t, proc_psi_t;
+	')
+
+	read_files_pattern($1, { proc_t proc_psi_t }, proc_psi_t)
+	read_lnk_files_pattern($1, { proc_t proc_psi_t }, proc_psi_t)
+	list_dirs_pattern($1, { proc_t proc_psi_t }, proc_psi_t)
+')
+
+########################################
+## <summary>
+##	Allow caller to set up pressure stall information (PSI).
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+## <rolecap/>
+#
+interface(`kernel_rw_psi',`
+	gen_require(`
+		type proc_t, proc_psi_t;
+	')
+
+	rw_files_pattern($1, { proc_t proc_psi_t }, proc_psi_t)
+	read_lnk_files_pattern($1, { proc_t proc_psi_t }, proc_psi_t)
+	list_dirs_pattern($1, { proc_t proc_psi_t }, proc_psi_t)
+
+	# kernel requires writers to have CAP_SYS_RESOURCE
+	allow $1 self:capability sys_resource;
+')
+
+########################################
+## <summary>
 ##	Allow searching of xen state directory.
 ## </summary>
 ## <param name="domain">
@@ -2213,6 +2258,24 @@ interface(`kernel_read_crypto_sysctls',`
 
 	read_files_pattern($1, { proc_t sysctl_t sysctl_crypto_t }, sysctl_crypto_t)
 	list_dirs_pattern($1, { proc_t sysctl_t }, sysctl_crypto_t)
+')
+
+########################################
+## <summary>
+##	Allow the specified domain mounton crypto sysctl files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`kernel_mounton_crypto_sysctl_files',`
+	gen_require(`
+		type sysctl_crypto_t;
+	')
+
+	allow $1 sysctl_crypto_t:file mounton;
 ')
 
 ########################################
